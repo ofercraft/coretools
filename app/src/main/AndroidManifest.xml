@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
+    <queries>
+
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+
+    </queries>
+
+    <application
+        android:allowBackup="true"
+        android:enableOnBackInvokedCallback="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:name=".CoretoolsApp"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Coretools">
+
+        <!-- MainActivity -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Coretools"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize"
+            android:windowSoftInputMode="adjustPan">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+
+        <!-- Flashlight Page -->
+        <activity
+            android:name=".ui.pages.FlashlightPageActivity"
+            android:exported="true"
+            android:label="Flashlight"
+            android:theme="@style/Theme.Coretools"
+            android:icon="@mipmap/ic_flashlight_launcher"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize"
+            android:windowSoftInputMode="adjustPan"
+            android:taskAffinity="com.feldman.coretools.flashlight" >
+        </activity>
+
+        <activity-alias
+            android:name=".FlashlightApp"
+            android:exported="true"
+            android:label="Flashlight"
+            android:icon="@mipmap/ic_flashlight_launcher"
+            android:targetActivity=".ui.pages.FlashlightPageActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+
+        <!-- Compass Page -->
+        <activity
+            android:name=".ui.pages.CompassPageActivity"
+            android:exported="true"
+            android:label="Compass"
+            android:theme="@style/Theme.Coretools"
+            android:icon="@mipmap/ic_compass_launcher"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize"
+            android:windowSoftInputMode="adjustPan"
+            android:taskAffinity="com.feldman.coretools.compass" >
+        </activity>
+
+        <activity-alias
+            android:name=".CompassApp"
+            android:exported="true"
+            android:label="Compass"
+            android:icon="@mipmap/ic_compass_launcher"
+            android:targetActivity=".ui.pages.CompassPageActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+
+        <!-- Usage Page -->
+        <activity
+            android:name=".ui.pages.UsagePageActivity"
+            android:exported="true"
+            android:label="Usage"
+            android:theme="@style/Theme.Coretools"
+            android:icon="@mipmap/ic_usage_launcher"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize"
+            android:windowSoftInputMode="adjustPan"
+            android:taskAffinity="com.feldman.coretools.usage">
+        </activity>
+
+        <activity-alias
+            android:name=".UsageApp"
+            android:exported="true"
+            android:label="Usage"
+            android:icon="@mipmap/ic_usage_launcher"
+            android:targetActivity=".ui.pages.UsagePageActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+
+        <!-- Level Page -->
+        <activity
+            android:name=".ui.pages.LevelPageActivity"
+            android:exported="true"
+            android:label="Usage"
+            android:theme="@style/Theme.Coretools"
+            android:icon="@mipmap/ic_usage_launcher"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize"
+            android:windowSoftInputMode="adjustPan"
+            android:taskAffinity="com.feldman.coretools.level">
+        </activity>
+
+        <activity-alias
+            android:name=".LevelApp"
+            android:exported="true"
+            android:label="Level"
+            android:icon="@mipmap/ic_level_launcher"
+            android:targetActivity=".ui.pages.LevelPageActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+
+
+
+
+
+
+        <!-- QuickSettings Router -->
+        <activity
+            android:name=".ui.tiles.QsPrefsRouterActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Coretools.Transparent"
+            android:excludeFromRecents="true"
+            android:taskAffinity="com.feldman.coretools.prefs">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+
+        <!-- Flashlight Tile -->
+        <service
+            android:name=".ui.tiles.FlashlightTileService"
+            android:label="Flashlight"
+            android:icon="@drawable/ic_flashlight"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true"
+            android:settingsActivity=".FlashlightTile">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.category"
+                android:value="CATEGORY_UTILITIES" />
+        </service>
+
+        <activity
+            android:name=".ui.tiles.FlashlightTile"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:visibleToInstantApps="false"
+            android:theme="@style/Theme.Coretools.Transparent">
+        </activity>
+
+
+        <!-- Compass Tile -->
+        <service
+            android:name=".ui.tiles.CompassTileService"
+            android:label="Compass"
+            android:icon="@drawable/ic_compass"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.category"
+                android:value="CATEGORY_TOOLS" />
+        </service>
+
+        <activity
+            android:name=".ui.tiles.CompassTile"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:theme="@style/Theme.Coretools.Transparent"
+            android:taskAffinity=""
+            android:windowAnimationStyle="@null"
+            android:exported="true">
+        </activity>
+
+
+        <!-- Level Tile -->
+        <service
+            android:name=".ui.tiles.LevelTileService"
+            android:label="Level"
+            android:icon="@drawable/ic_level"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true"
+            android:settingsActivity=".ui.pages.LevelPageActivity">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.category"
+                android:value="CATEGORY_TOOLS" />
+        </service>
+
+        <activity
+            android:name=".ui.tiles.LevelTile"
+            android:exported="true"
+            android:theme="@style/Theme.Coretools.Transparent"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:visibleToInstantApps="false" />
+
+
+
+    </application>
+
+</manifest>

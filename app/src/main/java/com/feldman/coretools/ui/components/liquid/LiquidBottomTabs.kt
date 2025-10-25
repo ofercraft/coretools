@@ -3,13 +3,20 @@ package com.feldman.coretools.ui.components.liquid
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -331,4 +338,211 @@ fun LiquidBottomTabs(
     }
 
 
+}
+
+
+@Composable
+fun LiquidSideTabs(
+    selectedTabIndex: () -> Int,
+    onTabSelected: (index: Int) -> Unit,
+    backdrop: Backdrop,
+    tabsCount: Int,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val isLightTheme = !isDarkTheme()
+    val accentColor = MaterialTheme.colorScheme.primary
+    val containerColor =
+        if (isLightTheme) Color(0xFFFAFAFA).copy(0.4f)
+        else Color(0xFF121212).copy(0.4f)
+
+    key(isLightTheme) {
+        val tabsBackdrop = rememberLayerBackdrop()
+        val animationScope = rememberCoroutineScope()
+        val density = LocalDensity.current
+
+        BoxWithConstraints(
+            modifier
+                .layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints.copy(maxWidth = 80.dp.roundToPx()))
+                    layout(placeable.width, placeable.height) {
+                        placeable.place(0, 0)
+                    }
+                },
+            contentAlignment = Alignment.TopCenter
+        ) {
+            val tabHeight = with(density) {
+                (constraints.maxHeight.toFloat() - 8.dp.toPx()) / tabsCount
+            }
+
+            val offsetAnimation = remember { Animatable(0f) }
+            val panelOffset by remember(density) {
+                derivedStateOf {
+                    val fraction = (offsetAnimation.value / constraints.maxHeight).fastCoerceIn(-1f, 1f)
+                    with(density) {
+                        4.dp.toPx() * fraction.sign * EaseOut.transform(abs(fraction))
+                    }
+                }
+            }
+
+            var didDrag by remember { mutableStateOf(false) }
+            val dampedDragAnimationState = remember { mutableStateOf<DampedDragAnimation?>(null) }
+
+            val dampedDragAnimation = dampedDragAnimationState.value ?: DampedDragAnimation(
+                animationScope = animationScope,
+                initialValue = selectedTabIndex().toFloat(),
+                valueRange = 0f..(tabsCount - 1).toFloat(),
+                visibilityThreshold = 0.001f,
+                initialScale = 1f,
+                pressedScale = 78f / 56f,
+                onDragStarted = {},
+                onDragStopped = {
+                    if (didDrag) {
+                        val snappedValue = targetValue.coerceIn(0f, (tabsCount - 1).toFloat())
+                        val targetIndex = snappedValue.roundToInt()
+                        animationScope.launch {
+                            val anim = dampedDragAnimationState.value ?: return@launch
+                            Animatable(anim.value).animateTo(
+                                targetIndex.toFloat(),
+                                spring(dampingRatio = 0.8f, stiffness = 300f)
+                            ) { anim.updateValue(value) }
+                        }
+                        if (targetIndex != selectedTabIndex() || targetIndex == 0) {
+                            onTabSelected(targetIndex)
+                        }
+                        didDrag = false
+                    }
+                    animationScope.launch {
+                        offsetAnimation.animateTo(0f, spring(dampingRatio = 0.8f, stiffness = 200f))
+                    }
+                },
+                onDrag = { _, dragAmount ->
+                    if (!didDrag) {
+                        didDrag = dragAmount.y != 0f
+                    }
+                    updateValue(
+                        (targetValue - dragAmount.y / tabHeight)
+                            .fastCoerceIn(-0.0001f, (tabsCount - 1 + 0.0001f))
+                    )
+                    animationScope.launch {
+                        offsetAnimation.snapTo(offsetAnimation.value + dragAmount.y)
+                    }
+                }
+            ).also {
+                dampedDragAnimationState.value = it
+            }
+
+            LaunchedEffect(dampedDragAnimation) {
+                snapshotFlow { selectedTabIndex().toFloat() }
+                    .collectLatest { index ->
+                        if (dampedDragAnimation.targetValue != index) {
+                            dampedDragAnimation.animateToValue(index)
+                        }
+                    }
+            }
+
+            LaunchedEffect(selectedTabIndex()) {
+                val index = selectedTabIndex().toFloat()
+                if (dampedDragAnimation.targetValue != index) {
+                    dampedDragAnimation.animateToValue(index)
+                }
+            }
+
+            val interactiveHighlight = remember(animationScope) {
+                InteractiveHighlight(
+                    animationScope = animationScope,
+                    position = { size, _ ->
+                        Offset(
+                            size.width / 2f,
+                            (dampedDragAnimation.value + 0.5f) * tabHeight + panelOffset
+                        )
+                    }
+                )
+            }
+
+            // 🔷 Background container (vertical)
+            Column(
+                Modifier
+                    .graphicsLayer { translationY = panelOffset }
+                    .drawBackdrop(
+                        backdrop = backdrop,
+                        shape = { ContinuousCapsule },
+                        effects = {
+                            vibrancy()
+                            blur(8.dp.toPx())
+                            lens(24.dp.toPx(), 24.dp.toPx())
+                        },
+                        layerBlock = {
+                            val progress = dampedDragAnimation.pressProgress
+                            val scale = lerp(1f, 1f + 12.dp.toPx() / size.height, progress)
+                            scaleX = scale
+                            scaleY = scale
+                        },
+                        onDrawSurface = { drawRect(containerColor) }
+                    )
+                    .then(interactiveHighlight.modifier)
+                    .fillMaxHeight()
+                    .width(72.dp)
+                    .padding(vertical = 4.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                content = content
+            )
+
+            // 🔘 Draggable liquid overlay
+            Box(
+                Modifier
+                    .padding(vertical = 4.dp)
+                    .graphicsLayer {
+                        translationY =
+                            (dampedDragAnimation.value * tabHeight + panelOffset).coerceAtLeast(0f)
+                    }
+                    .then(interactiveHighlight.gestureModifier)
+                    .then(dampedDragAnimation.modifier)
+                    .drawBackdrop(
+                        backdrop = rememberCombinedBackdrop(backdrop, tabsBackdrop),
+                        shape = { ContinuousCapsule },
+                        highlight = {
+                            val progress = dampedDragAnimation.pressProgress
+                            Highlight.Default.copy(alpha = progress)
+                        },
+                        shadow = {
+                            val progress = dampedDragAnimation.pressProgress
+                            Shadow(alpha = progress)
+                        },
+                        innerShadow = {
+                            val progress = dampedDragAnimation.pressProgress
+                            InnerShadow(radius = 8.dp * progress, alpha = progress)
+                        },
+                        effects = {
+                            val progress = dampedDragAnimation.pressProgress
+                            lens(
+                                12.dp.toPx() * progress,
+                                12.dp.toPx() * progress,
+                                chromaticAberration = true
+                            )
+                        },
+                        layerBlock = {
+                            scaleX = dampedDragAnimation.scaleX
+                            scaleY = dampedDragAnimation.scaleY
+                            val velocity = dampedDragAnimation.velocity / 10f
+                            scaleY /= 1f - (velocity * 0.75f).fastCoerceIn(-0.2f, 0.2f)
+                            scaleX *= 1f - (velocity * 0.25f).fastCoerceIn(-0.2f, 0.2f)
+                        },
+                        onDrawSurface = {
+                            val progress = dampedDragAnimation.pressProgress
+                            drawRect(
+                                if (isLightTheme) Color.Black.copy(0.1f)
+                                else Color.White.copy(0.1f),
+                                alpha = 1f - progress
+                            )
+                            drawRect(Color.Black.copy(alpha = 0.03f * progress))
+                        }
+                    )
+                    .width(72.dp)
+                    .fillMaxHeight(1f / tabsCount)
+            )
+        }
+    }
 }

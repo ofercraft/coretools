@@ -1224,7 +1224,6 @@ private fun CompassContentMain(
     }
 
 }
-
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun WeatherAndLocationSection(
@@ -1234,9 +1233,7 @@ private fun WeatherAndLocationSection(
     backdrop: Backdrop
 ) {
     val context = LocalContext.current
-
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
-
     val isGlass = appStyle == AppStyle.Glass
 
     val cookie9Shape = ScaledShape(MaterialShapes.Cookie9Sided.toShape(), scale = 1.3f)
@@ -1246,198 +1243,219 @@ private fun WeatherAndLocationSection(
 
     val secondaryContainer = MaterialTheme.colorScheme.secondaryContainer
     val hasForecast = forecastJson.has("current")
-
     val showWeatherRow by context.showWeatherRowFlow().collectAsState(initial = true)
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 10.dp)
-            .padding(top = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+    // 📱 Detect orientation
+    val isLandscape = LocalConfiguration.current.orientation ==
+            android.content.res.Configuration.ORIENTATION_LANDSCAPE
+
+    if (!hasForecast) return
+
+    val cur = forecastJson.getJSONObject("current")
+    val daily = forecastJson.getJSONObject("daily")
+
+    val temp = cur.optDouble("temperature_2m", Double.NaN)
+    val humidity = cur.optDouble("relative_humidity_2m", Double.NaN)
+    val feelsLike = cur.optDouble("apparent_temperature", Double.NaN)
+    val precipitation = cur.optDouble("precipitation", Double.NaN)
+    val rain = cur.optDouble("rain", Double.NaN)
+
+    val temperatureText = "${temp.roundToInt()}°C"
+    val humidityText = "${humidity.roundToInt()}%"
+    val feelsLikeText = "${feelsLike.roundToInt()}°C"
+    val rainText = "$rain mm"
+    val precipText = "$precipitation mm"
+
+    val maxTemp = daily.getJSONArray("temperature_2m_max")[0].toString()
+    val minTemp = daily.getJSONArray("temperature_2m_min")[0].toString()
+
+    val hourly = forecastJson.getJSONObject("hourly")
+    val hourlyTimes = hourly.getJSONArray("time")
+    val hourlyTemps = hourly.getJSONArray("temperature_2m")
+    val hourlyFeels = hourly.getJSONArray("apparent_temperature")
+    val hourlyClouds = hourly.getJSONArray("cloud_cover")
+
+    val nextHours = (0 until minOf(24, hourlyTemps.length())).map { i ->
+        val time = hourlyTimes.getString(i).substringAfter("T")
+        val tempH = hourlyTemps.getDouble(i).toInt()
+        val feelH = hourlyFeels.getDouble(i).toInt()
+        val cloud = hourlyClouds.getInt(i)
+        HourlyForecast(time, tempH, feelH, cloud)
+    }
+
+    if (locationPermissionState.status == PermissionStatus.Granted &&
+        temperatureText != "0.0" && showWeatherRow
     ) {
-        if (hasForecast) {
-            val cur = forecastJson.getJSONObject("current")
-            val daily = forecastJson.getJSONObject("daily")
+        if (!isLandscape) {
+            // 🌤 Portrait layout (unchanged)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 20.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                WeatherRows(
+                    timeStr, temperatureText, humidityText, feelsLikeText,
+                    rainText, precipText, maxTemp, minTemp,
+                    isGlass, secondaryContainer, backdrop,
+                    squareShape, cookie9Shape, archShape, cookie4Shape
+                )
 
-            val temp = cur.optDouble("temperature_2m", Double.NaN)
-            val humidity = cur.optDouble("relative_humidity_2m", Double.NaN)
-            val feelsLike = cur.optDouble("apparent_temperature", Double.NaN)
-            val precipitation = cur.optDouble("precipitation", Double.NaN)
-            val rain = cur.optDouble("rain", Double.NaN)
-//            val cloudCover = cur.optDouble("cloud_cover", Double.NaN)
-
-            val temperatureText = "${temp.roundToInt()}°C"
-            val humidityText = "${humidity.roundToInt()}%"
-            val feelsLikeText = "${feelsLike.roundToInt()}°C"
-            val rainText = "$rain mm"
-            val precipText = "$precipitation mm"
-
-//            val cloudText = "${cloudCover.roundToInt()}%"
-
-            val maxTemp = daily.getJSONArray("temperature_2m_max")[0].toString()
-            val minTemp = daily.getJSONArray("temperature_2m_min")[0].toString()
-
-//            val maxApparent = daily.getJSONArray("apparent_temperature_max")[0].toString()
-//            val minApparent = daily.getJSONArray("apparent_temperature_min")[0].toString()
-
-            val hourly = forecastJson.getJSONObject("hourly")
-            val hourlyTimes = hourly.getJSONArray("time")
-            val hourlyTemps = hourly.getJSONArray("temperature_2m")
-            val hourlyFeels = hourly.getJSONArray("apparent_temperature")
-            val hourlyClouds = hourly.getJSONArray("cloud_cover")
-
-            val nextHours = (0 until minOf(24, hourlyTemps.length())).map { i ->
-                val time = hourlyTimes.getString(i).substringAfter("T")
-                val temp = hourlyTemps.getDouble(i).toInt()
-                val feel = hourlyFeels.getDouble(i).toInt()
-                val cloud = hourlyClouds.getInt(i)
-                HourlyForecast(time, temp, feel, cloud)
+                HourlyForecastCard(hours = nextHours)
             }
-
-            when {
-                locationPermissionState.status==PermissionStatus.Granted && temperatureText!="0.0" && showWeatherRow -> {
+        } else {
+            // 💻 Landscape layout → nextHours on top right, min/max below it
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp, vertical = 0.dp),
+                horizontalArrangement = Arrangement.spacedBy(32.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Left side: weather info (time/temp/humidity/etc.)
+                Column(
+                    modifier = Modifier
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(if (isGlass) 10.dp else 30.dp, Alignment.CenterHorizontally),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            if (isGlass) 10.dp else 30.dp,
+                            Alignment.CenterHorizontally
+                        ),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        SensorCard(
-                            icon = R.drawable.ic_clock,
-                            label = "Time",
-                            value = timeStr,
-                            shape = squareShape,
-                            color = secondaryContainer,
-                            index = 0,
-                            backdrop = backdrop
-                        )
-                        SensorCard(
-                            icon = R.drawable.ic_temperature,
-                            label = "Temp",
-                            value = temperatureText,
-                            shape = cookie9Shape,
-                            color = secondaryContainer,
-                            index = 0,
-                            backdrop = backdrop
-                        )
-                        SensorCard(
-                            icon = R.drawable.ic_humidity,
-                            label = "Humidity",
-                            value = humidityText,
-                            shape = archShape,
-                            color = secondaryContainer,
-                            index = 0,
-                            backdrop = backdrop
-                        )
+                        SensorCard(R.drawable.ic_clock, "Time", timeStr, squareShape, secondaryContainer, 0, backdrop)
+                        SensorCard(R.drawable.ic_temperature, "Temp", temperatureText, cookie9Shape, secondaryContainer, 0, backdrop)
+                        SensorCard(R.drawable.ic_humidity, "Humidity", humidityText, archShape, secondaryContainer, 0, backdrop)
                     }
-                    Spacer(Modifier.height(8.dp))
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(if (isGlass) 10.dp else 30.dp, Alignment.CenterHorizontally),
+                            .padding(horizontal = 16.dp)
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            if (isGlass) 10.dp else 30.dp,
+                            Alignment.CenterHorizontally
+                        ),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        SensorCard(
-                            icon = R.drawable.ic_thermostat,
-                            label = "Feels like",
-                            value = feelsLikeText,
-                            shape = cookie4Shape,
-                            color = secondaryContainer,
-                            index = 0,
-                            backdrop = backdrop
-                        )
-                        SensorCard(
-                            icon = R.drawable.ic_rainy,
-                            label = "Rain",
-                            value = rainText,
-                            shape = archShape,
-                            color = secondaryContainer,
-                            index = 0,
-                            backdrop = backdrop
-                        )
-                        SensorCard(
-                            icon = R.drawable.ic_cloud,
-                            label = "Precipitation",
-                            value = precipText,
-                            shape = archShape,
-                            color = secondaryContainer,
-                            index = 0,
-                            backdrop = backdrop
-                        )
+                        SensorCard(R.drawable.ic_thermostat, "Feels like", feelsLikeText, cookie4Shape, secondaryContainer, 0, backdrop)
+                        SensorCard(R.drawable.ic_rainy, "Rain", rainText, archShape, secondaryContainer, 0, backdrop)
+                        SensorCard(R.drawable.ic_cloud, "Precipitation", precipText, archShape, secondaryContainer, 0, backdrop)
                     }
-                    Spacer(Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(if (isGlass) 10.dp else 40.dp, Alignment.CenterHorizontally),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        SensorCard(
-                            icon = R.drawable.ic_thermostat,
-                            label = "Max Temp",
-                            value = maxTemp,
-                            shape = cookie4Shape,
-                            color = secondaryContainer,
-                            index = 0,
-                            backdrop = backdrop
-                        )
-                        SensorCard(
-                            icon = R.drawable.ic_thermostat,
-                            label = "Min Temp",
-                            value = minTemp,
-                            shape = archShape,
-                            color = secondaryContainer,
-                            index = 0,
-                            backdrop = backdrop
-                        )
-                    }
-
-                    Spacer(Modifier.height(16.dp))
-
-
-
-
-                    HourlyForecastCard(
-                        hours = nextHours.map { hour ->
-                            HourlyForecast(
-                                time = hour.time,
-                                temperature = hour.temperature,
-                                feelsLike = hour.feelsLike,
-                                cloudCover = hour.cloudCover
-                            )
-                        }
-                    )
-
-
-
-
-
                 }
 
+                // Right side: Hourly forecast + min/max below
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    HourlyForecastCard(hours = nextHours)
 
-                locationPermissionState.status is PermissionStatus.Denied -> {
-                    // Ask for location access
-                    Button(
-                        onClick = { locationPermissionState.launchPermissionRequest() },
-                        modifier = Modifier.fillMaxWidth()
+                    // ↓ Min/Max row goes BELOW HourlyForecastCard
+                    Row(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            if (isGlass) 10.dp else 40.dp,
+                            Alignment.CenterHorizontally
+                        ),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Allow Location Services")
+                        SensorCard(
+                            R.drawable.ic_thermostat, "Max Temp", maxTemp,
+                            cookie4Shape, secondaryContainer, 0, backdrop
+                        )
+                        SensorCard(
+                            R.drawable.ic_thermostat, "Min Temp", minTemp,
+                            archShape, secondaryContainer, 0, backdrop
+                        )
                     }
-                }
-                else -> {
-
                 }
             }
         }
+    } else if (locationPermissionState.status is PermissionStatus.Denied) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Button(onClick = { locationPermissionState.launchPermissionRequest() }) {
+                Text("Allow Location Services")
+            }
+        }
     }
+}
 
 
+@Composable
+private fun WeatherRows(
+    timeStr: String,
+    temperatureText: String,
+    humidityText: String,
+    feelsLikeText: String,
+    rainText: String,
+    precipText: String,
+    maxTemp: String,
+    minTemp: String,
+    isGlass: Boolean,
+    secondaryContainer: Color,
+    backdrop: Backdrop,
+    squareShape: ScaledShape,
+    cookie9Shape: ScaledShape,
+    archShape: ScaledShape,
+    cookie4Shape: ScaledShape
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(if (isGlass) 10.dp else 30.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SensorCard(R.drawable.ic_clock, "Time", timeStr, squareShape, secondaryContainer, 0, backdrop)
+            SensorCard(R.drawable.ic_temperature, "Temp", temperatureText, cookie9Shape, secondaryContainer, 0, backdrop)
+            SensorCard(R.drawable.ic_humidity, "Humidity", humidityText, archShape, secondaryContainer, 0, backdrop)
+        }
 
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(if (isGlass) 10.dp else 30.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SensorCard(R.drawable.ic_thermostat, "Feels like", feelsLikeText, cookie4Shape, secondaryContainer, 0, backdrop)
+            SensorCard(R.drawable.ic_rainy, "Rain", rainText, archShape, secondaryContainer, 0, backdrop)
+            SensorCard(R.drawable.ic_cloud, "Precipitation", precipText, archShape, secondaryContainer, 0, backdrop)
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(if (isGlass) 10.dp else 40.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SensorCard(R.drawable.ic_thermostat, "Max Temp", maxTemp, cookie4Shape, secondaryContainer, 0, backdrop)
+            SensorCard(R.drawable.ic_thermostat, "Min Temp", minTemp, archShape, secondaryContainer, 0, backdrop)
+        }
+    }
 }
 
 fun DrawScope.drawDial(

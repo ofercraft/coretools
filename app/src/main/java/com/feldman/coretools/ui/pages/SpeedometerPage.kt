@@ -63,6 +63,7 @@ fun SpeedometerPage(modifier: Modifier = Modifier) {
 
     val speedUnit by context.speedUnitFlow().collectAsState(initial = "kmh")
 
+    // 🔄 Update speed every second
     LaunchedEffect(locationPermission.status, speedUnit) {
         if (locationPermission.status == PermissionStatus.Granted) {
             while (true) {
@@ -82,7 +83,6 @@ fun SpeedometerPage(modifier: Modifier = Modifier) {
         }
     }
 
-
     if (locationPermission.status is PermissionStatus.Denied) {
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Button(onClick = { locationPermission.launchPermissionRequest() }) {
@@ -92,34 +92,91 @@ fun SpeedometerPage(modifier: Modifier = Modifier) {
         return
     }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(bottom = 120.dp)
-    ) {
-        SpeedometerContent(
-            speed = speed,
-            isGlass = isGlass,
-            backdrop = backdrop,
-            isKmh = speedUnit == "kmh"
-        )
+    // 🧭 Detect orientation
+    val isLandscape =
+        androidx.compose.ui.platform.LocalConfiguration.current.orientation ==
+                android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 24.dp)
+    if (!isLandscape) {
+        // 📱 Portrait → Gauge on top, stats below
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                SpeedometerContent(
+                    speed = speed,
+                    isGlass = isGlass,
+                    backdrop = backdrop,
+                    isKmh = speedUnit == "kmh"
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
+
             SpeedStatsRow(
                 minSpeed = if (minSpeed == Float.MAX_VALUE) 0f else minSpeed,
                 avgSpeed = avgSpeed,
                 maxSpeed = topSpeed,
                 backdrop = backdrop,
                 isGlass = isGlass,
-                isKmh = speedUnit == "kmh"
+                isKmh = speedUnit == "kmh",
+                modifier = Modifier.padding(bottom = 24.dp)
             )
+        }
+    } else {
+        // 💻 Landscape → Gauge left, stats right
+        Row(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(24.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Gauge (left)
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .aspectRatio(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                SpeedometerContent(
+                    speed = speed,
+                    isGlass = isGlass,
+                    backdrop = backdrop,
+                    isKmh = speedUnit == "kmh"
+                )
+            }
+
+            // Stats (right)
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                SpeedStatsRow(
+                    minSpeed = if (minSpeed == Float.MAX_VALUE) 0f else minSpeed,
+                    avgSpeed = avgSpeed,
+                    maxSpeed = topSpeed,
+                    backdrop = backdrop,
+                    isGlass = isGlass,
+                    isKmh = speedUnit == "kmh"
+                )
+            }
         }
     }
 }
+
 
 
 
@@ -224,21 +281,7 @@ private fun SpeedometerContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
-                    .aspectRatio(1f)
-                    .drawBackdrop(
-                        backdrop = backdrop,
-                        effects = {
-                            vibrancy()
-                            blur(8.dp.toPx())
-                            lens(
-                                refractionHeight = 24.dp.toPx(),
-                                refractionAmount = 60.dp.toPx(),
-                                depthEffect = true
-                            )
-                        },
-                        shape = { RoundedCornerShape(50) },
-                        onDrawSurface = { drawRect(Color.White.copy(alpha = 0.12f)) }
-                    ),
+                    .aspectRatio(1f),
                 contentAlignment = Alignment.Center
             ) {
                 SpeedometerGauge(

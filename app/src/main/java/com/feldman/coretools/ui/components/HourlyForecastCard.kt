@@ -14,17 +14,22 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.feldman.coretools.R
+import com.feldman.coretools.storage.AppStyle
+import com.feldman.coretools.storage.appStyleFlow
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -94,29 +99,30 @@ fun HourlyWeatherIcon(hour: HourlyForecast) {
 fun HourlyForecastCard(
     hours: List<HourlyForecast>
 ) {
-    // 🕒 Get current time
+    val context = LocalContext.current
+
     val currentHour = remember {
         SimpleDateFormat("HH", Locale.getDefault()).format(Date()).toInt()
     }
 
-    // 🧮 Filter only hours from now onward
     val filteredHours = remember(hours) {
         hours.filter { hour ->
             // Handle "HH:mm" or "HH" format gracefully
             val hourInt = hour.time.substringBefore(":").toIntOrNull() ?: 0
             hourInt >= currentHour
         }.mapIndexed { index, hour ->
-            // Replace first visible hour with "Now"
             if (index == 0) hour.copy(time = "Now") else hour
         }
     }
+    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
+    val isGlass = appStyle == AppStyle.Glass
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .height(160.dp)
             .background(
-                MaterialTheme.colorScheme.secondaryContainer,
+                if (isGlass) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.secondaryContainer,
                 RoundedCornerShape(32.dp)
             ),
     ) {

@@ -3,7 +3,7 @@ accompanistPermissions = "0.37.3"
 accompanistSwiperefresh = "0.36.0"
 activityCompose = "1.11.0"
 agp = "8.13.0"
-androidliquidglass = "1.0.0-beta02"
+androidliquidglass = "1.0.0"
 capsule = "2.1.0"
 datastorePreferences = "1.1.7"
 kotlin = "2.2.20"
@@ -17,7 +17,7 @@ loggingInterceptor = "5.2.1"
 materialIconsCore = "1.7.8"
 
 # Jetpack Compose
-compose-bom = "2025.10.00"
+compose-bom = "2025.10.01"
 
 # Testing
 junit = "4.13.2"
@@ -26,7 +26,7 @@ espressoCore = "3.7.0"
 materialVersion = "1.13.0"
 navigationCompose = "2.9.5"
 okhttp = "5.2.1"
-material3 = "1.5.0-alpha06"
+material3 = "1.5.0-alpha07"
 swiperefreshlayout = "1.1.0"
 roomKtx = "2.8.2"
 playServicesLocation = "21.3.0"
@@ -40,7 +40,7 @@ material3Version = "1.4.0"
 accompanist-navigation-animation = { module = "com.google.accompanist:accompanist-navigation-animation", version.ref = "accompanistSwiperefresh" }
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
 accompanist-swiperefresh = { module = "com.google.accompanist:accompanist-swiperefresh", version.ref = "accompanistSwiperefresh" }
-androidliquidglass = { module = "com.github.Kyant0:AndroidLiquidGlass", version.ref = "androidliquidglass" }
+androidliquidglass = { module = "io.github.kyant0:backdrop", version.ref = "androidliquidglass" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-compose-bom-v20250801 = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

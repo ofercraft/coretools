@@ -6,6 +6,7 @@ import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
@@ -39,6 +40,7 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -518,7 +520,7 @@ private fun DayHeader(
 ) {
     val chipHeight = 48.dp
     val context = LocalContext.current
-    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Playful)
+    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
     val isGlass = appStyle == AppStyle.Glass
 
 
@@ -735,7 +737,7 @@ private fun UsagePage(
     val showDayPicker = remember { mutableStateOf(false) }
 
     val backdrop = rememberLayerBackdrop()
-    val appStyle by context.appStyleFlow().collectAsState(initial =AppStyle.Playful)
+    val appStyle by context.appStyleFlow().collectAsState(initial =AppStyle.Material)
     val isGlass = appStyle == AppStyle.Glass
 
     Box(
@@ -804,7 +806,10 @@ private fun UsagePage(
                     )
                 }
             }
-            val columns = 3
+
+            val isLandscape = LocalConfiguration.current.orientation == ORIENTATION_LANDSCAPE
+
+            val columns = if (isLandscape) 5 else 3
             val hSpacing = 12.dp
             val vSpacing = 12.dp
             val backdrop = rememberLayerBackdrop()
@@ -957,7 +962,7 @@ private fun UsageCard(
             transformOrigin = TransformOrigin.Center
         }
     val context = LocalContext.current
-    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Playful)
+    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
     val isGlass = appStyle == AppStyle.Glass
     val dark = isDarkTheme()
 

@@ -28,6 +28,7 @@ import com.feldman.coretools.ui.pages.settings.CompassSettingsPage
 import com.feldman.coretools.ui.pages.settings.CustomizationSettingsPage
 import com.feldman.coretools.ui.pages.settings.FlashlightSettingsPage
 import com.feldman.coretools.ui.pages.settings.LevelSettingsPage
+import com.feldman.coretools.ui.pages.settings.SpeedometerSettingsPage
 import com.feldman.coretools.ui.pages.settings.TileSettingsPage
 import com.feldman.coretools.ui.pages.settings.UsageSettingsPage
 import com.kyant.backdrop.backdrops.LayerBackdrop
@@ -156,8 +157,9 @@ fun AppNavHost(
         modifier = modifier
     ) {
         composable(Dest.Flashlight.name) { FlashlightPage() }
-        composable(Dest.Usage.name) { UsageScreen() }
         composable(Dest.Compass.name) { CompassPage() }
+        composable(Dest.Speedometer.name) { SpeedometerPage() }
+        composable(Dest.Usage.name) { UsageScreen() }
         composable(Dest.Level.name) { LevelPage(modifier = Modifier.layerBackdrop(backdrop)) }
         composable(Dest.Settings.name) { SettingsPage(navController = navController) }
 
@@ -166,6 +168,10 @@ fun AppNavHost(
         composable(Dest.SettingsCustomization.name) { CustomizationSettingsPage(navController) }
         composable(Dest.SettingsFlash.name) { FlashlightSettingsPage(navController) }
         composable(Dest.SettingsCompass.name) { CompassSettingsPage(navController) }
+        composable(Dest.SettingsSpeedometer.name) {
+            println(123)
+            SpeedometerSettingsPage(navController)
+        }
         composable(Dest.SettingsUsage.name) { UsageSettingsPage(navController) }
         composable(Dest.SettingsLevel.name) { LevelSettingsPage(navController) }
         composable(Dest.SettingsTile.name) { TileSettingsPage(navController) }

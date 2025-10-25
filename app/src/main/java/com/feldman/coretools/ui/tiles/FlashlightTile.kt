@@ -109,7 +109,7 @@ object FlashlightController {
 @Composable
 fun FlashlightTile(onDismiss: () -> Unit) {
     val context = LocalContext.current
-    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Playful)
+    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
     val isGlass = appStyle == AppStyle.Glass
     val backdrop = rememberLayerBackdrop()
 
@@ -304,7 +304,7 @@ fun PresetButtonRow(
     showText: Boolean = true
 ) {
     val context = LocalContext.current
-    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Playful)
+    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
     val isGlass = appStyle == AppStyle.Glass
 
     val options = listOf("0", "33", "50", "100")

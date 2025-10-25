@@ -1,0 +1,11 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960">
+
+    <!-- Needle outline -->
+    <path
+        android:pathData="M418,620q24,24 62,23.5t56,-27.5l224,-336 -336,224q-27,18 -28.5,55t22.5,61Z"
+        android:fillColor="#e3e3e3" />
+</vector>

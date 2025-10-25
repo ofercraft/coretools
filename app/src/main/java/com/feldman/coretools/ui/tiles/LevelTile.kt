@@ -167,7 +167,7 @@ fun CombinedLevelTilePage(
     val engine = remember { LevelEngine(context) }
     val angles by engine.anglesFlow.collectAsState(initial = LevelAngles())
     val backdrop = rememberLayerBackdrop()
-    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Playful)
+    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
     val isGlass = appStyle == AppStyle.Glass
     val dark = isDarkTheme()
 

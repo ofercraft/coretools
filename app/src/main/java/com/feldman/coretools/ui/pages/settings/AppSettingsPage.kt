@@ -44,7 +44,7 @@ fun AppSettingsPage(navController: NavController) {
     val scope = rememberCoroutineScope()
 
     val backdrop = rememberLayerBackdrop()
-    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Playful)
+    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
     val isGlass = appStyle == AppStyle.Glass
 
     val defaultDest by context.defaultPageFlow().collectAsState(initial = Dest.Flashlight)

@@ -49,6 +49,10 @@ object PrefKeys {
     //Tiles
     val SHOW_TILE_INFO = booleanPreferencesKey("show_tile_info")
     val OPEN_FULL_PAGES = booleanPreferencesKey("open_full_pages")
+
+
+    // Speedometer
+    val SPEED_UNIT = stringPreferencesKey("speed_unit")
 }
 
 
@@ -198,4 +202,15 @@ fun Context.openFullPagesFlow(): Flow<Boolean> =
 
 suspend fun Context.setOpenFullPages(enabled: Boolean) {
     dataStore.edit { it[PrefKeys.OPEN_FULL_PAGES] = enabled }
+}
+
+
+
+
+//Speedometer
+fun Context.speedUnitFlow(): Flow<String> =
+    dataStore.data.map { prefs -> prefs[PrefKeys.SPEED_UNIT] ?: "kmh" }
+
+suspend fun Context.setSpeedUnit(unit: String) {
+    dataStore.edit { it[PrefKeys.SPEED_UNIT] = unit }
 }

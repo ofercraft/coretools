@@ -3,7 +3,7 @@ accompanistPermissions = "0.37.3"
 accompanistSwiperefresh = "0.36.0"
 activityCompose = "1.11.0"
 agp = "8.13.0"
-androidliquidglass = "1.0.0-beta01"
+androidliquidglass = "1.0.0-beta02"
 capsule = "2.1.0"
 datastorePreferences = "1.1.7"
 kotlin = "2.2.20"
@@ -33,6 +33,7 @@ playServicesLocation = "21.3.0"
 animationCore = "1.9.3"
 foundation = "1.9.3"
 foundationLayout = "1.9.3"
+material3Version = "1.4.0"
 
 [libraries]
 # AndroidX
@@ -72,6 +73,7 @@ play-services-location = { group = "com.google.android.gms", name = "play-servic
 androidx-compose-animation-core = { group = "androidx.compose.animation", name = "animation-core", version.ref = "animationCore" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
 androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayout" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3Version" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

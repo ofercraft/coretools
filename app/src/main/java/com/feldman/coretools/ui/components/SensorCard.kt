@@ -4,6 +4,7 @@ import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -43,7 +44,7 @@ fun RowScope.SensorCard(
     speed: Long = 80L
 ) {
     val context = LocalContext.current
-    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Playful)
+    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
     val isGlass = appStyle == AppStyle.Glass
 
     var shape = shape
@@ -86,21 +87,21 @@ fun RowScope.SensorCard(
         ) {
             Column(
                 modifier = Modifier
-                    .drawBackdrop(
-                        backdrop = backdrop,
-                        effects =  {
-                            vibrancy()
-                            blur(12.dp.toPx())
-                            lens(
-                                refractionHeight = 40.dp.toPx(),
-                                refractionAmount = 120.dp.toPx(),
-                                depthEffect = true
-                            )
-                        },
-                        shape = { RoundedCornerShape(cornerRadius) },
-                        onDrawSurface = { drawRect(if(dark) Color(0xFF313131).copy(alpha = 0.2f) else Color(0xFFBDBDBD).copy(alpha = 0.2f) ) }
-
-                    )
+//                    .drawBackdrop(
+//                        backdrop = backdrop,
+//                        effects =  {
+//                            vibrancy()
+//                            blur(12.dp.toPx())
+//                            lens(
+//                                refractionHeight = 40.dp.toPx(),
+//                                refractionAmount = 120.dp.toPx(),
+//                                depthEffect = true
+//                            )
+//                        },
+//                        shape = { RoundedCornerShape(cornerRadius) },
+//                        onDrawSurface = { drawRect(if(dark) Color(0xFF313131).copy(alpha = 0.2f) else Color(0xFFBDBDBD).copy(alpha = 0.2f) ) }
+//                    )
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
                     .fillMaxSize(),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -161,7 +162,7 @@ fun ColumnScope.SensorCard(
     speed: Long = 80L
 ) {
     val context = LocalContext.current
-    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Playful)
+    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
     val isGlass = appStyle == AppStyle.Glass
 
     var shape = shape

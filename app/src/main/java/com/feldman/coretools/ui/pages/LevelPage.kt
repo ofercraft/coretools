@@ -245,7 +245,7 @@ private fun CombinedCanvas(
     val dark = isDarkTheme()
 
     val context = LocalContext.current
-    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Playful)
+    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
     val isGlass = appStyle == AppStyle.Glass
 
     if (isGlass) {
@@ -357,7 +357,7 @@ private fun CombinedPage(
     val cookie4Shape = ScaledShape(MaterialShapes.Cookie4Sided.toShape(), scale = 1.4f)
 
     val context = LocalContext.current
-    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Playful)
+    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
     val isGlass = appStyle == AppStyle.Glass
 
     val vibrator = remember { context.getSystemService(Vibrator::class.java) }
@@ -521,7 +521,7 @@ fun HorizontalLevel(
 
 
     val context = LocalContext.current
-    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Playful)
+    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
     val isGlass = appStyle == AppStyle.Glass
 
     val background = MaterialTheme.colorScheme.background
@@ -745,7 +745,7 @@ fun VerticalLevel(
 
 
 
-    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Playful)
+    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
     val isGlass = appStyle == AppStyle.Glass
 
     val configuration = LocalConfiguration.current

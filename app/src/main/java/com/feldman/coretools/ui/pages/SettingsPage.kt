@@ -50,6 +50,7 @@ fun SettingsPage(
                     SegmentedOption("customization", text = "Customization", desc = "Customize the app style and feel", iconRes = R.drawable.ic_palette),
                     SegmentedOption("flashlight", text = "Flashlight", desc = "Instant flashlight, default brightness...", iconRes = R.drawable.ic_flashlight),
                     SegmentedOption("compass", text = "Compass", desc = "Adjust Compass shape, show inter-cardinals, use true north...", iconRes = R.drawable.ic_compass),
+                    SegmentedOption("speedometer", text = "Speedometer", desc = "Adjust speed unit", iconRes = R.drawable.ic_speed),
                     SegmentedOption("usage", text = "Usage", desc = "Adjust usage settings", iconRes = R.drawable.ic_usage),
                     SegmentedOption("level", text = "Level", desc = "Adjust level settings", iconRes = R.drawable.ic_level),
                     SegmentedOption("tile", text = "Tile", desc = "Adjust tiles settings", iconRes = R.drawable.ic_tile),
@@ -58,8 +59,9 @@ fun SettingsPage(
                     when (option) {
                         "app" -> navController.navigate(Dest.SettingsApp.name)
                         "customization" -> navController.navigate(Dest.SettingsCustomization.name)
-                        "compass" -> navController.navigate(Dest.SettingsCompass.name)
                         "flashlight" -> navController.navigate(Dest.SettingsFlash.name)
+                        "compass" -> navController.navigate(Dest.SettingsCompass.name)
+                        "speedometer" -> navController.navigate(Dest.SettingsSpeedometer.name)
                         "usage" -> navController.navigate(Dest.SettingsUsage.name)
                         "level" -> navController.navigate(Dest.SettingsLevel.name)
                         "tile" -> navController.navigate(Dest.SettingsTile.name)
@@ -70,6 +72,7 @@ fun SettingsPage(
             )
 
         }
+        Spacer(Modifier.height(16.dp))
     }
 
 }

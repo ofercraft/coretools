@@ -29,9 +29,14 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -69,6 +74,7 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -470,105 +476,16 @@ fun MaterialSwitch(
     )
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-fun CompassSettingsSheet() {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Playful)
-    val isGlass = appStyle == AppStyle.Glass
-
-    val backdrop = rememberLayerBackdrop()
-
-    val compassShape by context.compassShapeFlow().collectAsState(initial = 0)
-    val showIntercardinals by context.showIntercardinalsFlow().collectAsState(initial = true)
-    val showWeatherRow by context.showWeatherRowFlow().collectAsState(initial = true)
-
-
-    Column(Modifier.padding(16.dp)) {
-        Text("Compass Shape", style = MaterialTheme.typography.titleMedium)
-
-        CompassShapePicker(
-            currentShapeId = compassShape,
-            onShapeChange = { id -> scope.launch { context.setCompassShape(id) } },
-            isGlass,
-            backdrop
-        )
-
-        Spacer(Modifier.height(24.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Show inter cardinals")
-            Spacer(Modifier.weight(1f))
-            MaterialSwitch(
-                checked = showIntercardinals,
-                onCheckedChange = { checked ->
-                    scope.launch { context.setShowIntercardinals(checked) }
-                }
-            )
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Show weather row")
-            Spacer(Modifier.weight(1f))
-            MaterialSwitch(
-                checked = showWeatherRow,
-                onCheckedChange = { checked ->
-                    scope.launch { context.setShowWeatherRow(checked) }
-                }
-            )
-        }
-        Spacer(Modifier.height(24.dp))
-
-        val showCalDialog = remember { mutableStateOf(false) }
-        if (showCalDialog.value) {
-            // Reuse your existing dialog
-            val state = rememberCompassState()
-            CalibrationDialog(
-                state = state, )
-        }
-
-        Button(
-            onClick = { showCalDialog.value = true },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(70.dp)
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_calibration),
-                contentDescription = "Calibrate",
-                modifier = Modifier.size(25.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(stringResource(R.string.calibrate), fontSize = 20.sp)
-        }
-
-    }
-}
-
-
-
-
-
 @Composable
 fun LocationCard(
     name: String,
     index: Int,
-    backdrop: Backdrop,
     modifier: Modifier = Modifier,
     shape: Shape = MaterialTheme.shapes.extraLarge,
     ) {
     var visible by remember(name) { mutableStateOf(false) }
     val context = LocalContext.current
-    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Playful)
+    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
     val isGlass = appStyle == AppStyle.Glass
     val dark = isDarkTheme()
 
@@ -601,20 +518,7 @@ fun LocationCard(
                     scaleX = scale
                     scaleY = scale
                 }
-                .drawBackdrop(
-                    backdrop = backdrop,
-                    effects =  {
-                        vibrancy()
-                        blur(4.dp.toPx())
-                        lens(
-                            refractionHeight = 24f.dp.toPx(),
-                            refractionAmount = 60f.dp.toPx(),
-                            depthEffect = true
-                        )
-                    },
-                    shape = { RoundedCornerShape(32.dp) },
-                    onDrawSurface = { drawRect(if(dark) Color(0xFF313131).copy(alpha = 0.2f) else Color(0xFFBDBDBD).copy(alpha = 0.2f)) }
-                )
+                .background(MaterialTheme.colorScheme.surfaceVariant)
 
         ) {
             Row(
@@ -685,7 +589,7 @@ fun LocationCard(
     ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class
 )
 @Composable
-fun CompassPage(modifier: Modifier = Modifier) {
+fun CompassPage() {
     val state = rememberCompassState()
     val context = LocalContext.current
     val trueNorth by context.trueNorthFlow().collectAsState(initial = false)
@@ -753,7 +657,7 @@ fun CompassPage(modifier: Modifier = Modifier) {
     val backdrop = rememberLayerBackdrop()
 
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
-    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Playful)
+    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
 
     var timeStr by remember { mutableStateOf("--:--") }
     var locationName by remember { mutableStateOf<String?>(null) }
@@ -844,9 +748,6 @@ fun CompassPage(modifier: Modifier = Modifier) {
     val screenHeight = LocalResources.current.displayMetrics.heightPixels / LocalResources.current.displayMetrics.density
     val expandTrigger = screenHeight * 0.2f
 
-    val isExpanded by remember {
-        derivedStateOf { scrollState.value > expandTrigger }
-    }
     var mainHeightPx by remember { mutableFloatStateOf(0f) }
 
     val scope = rememberCoroutineScope()
@@ -865,19 +766,48 @@ fun CompassPage(modifier: Modifier = Modifier) {
     }
 
 
-    val isLandscape = LocalConfiguration.current.orientation == ORIENTATION_LANDSCAPE
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { 2 })
 
-    CompassContentMain(
-        state = state.copy(azimuth = correctedAzimuth),
-        backdrop = backdrop,
-        appStyle = appStyle,
-        forecastJson = forecastJson,
-        timeStr = timeStr,
-        locationName = locationName,
+    VerticalPager(
+        state = pagerState,
+        beyondViewportPageCount = 1,
         modifier = Modifier
-            .onGloballyPositioned { coords -> mainHeightPx = coords.size.height.toFloat() }
-    )
-
+            .fillMaxSize()
+            .nestedScroll(
+                PagerDefaults.pageNestedScrollConnection(
+                    state = pagerState,
+                    orientation = Orientation.Vertical
+                )
+            )
+    ) { page ->
+        when (page) {
+            0 -> {
+                // 🧭 Compass content page
+                CompassContentMain(
+                    state = state.copy(azimuth = correctedAzimuth),
+                    backdrop = backdrop,
+                    appStyle = appStyle,
+                    forecastJson = forecastJson,
+                    timeStr = timeStr,
+                    locationName = locationName,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .onGloballyPositioned { coords ->
+                            mainHeightPx = coords.size.height.toFloat()
+                        }
+                )
+            }
+            1 -> {
+                // 🌦️ Weather page
+                WeatherAndLocationSection(
+                    appStyle = appStyle,
+                    forecastJson = forecastJson,
+                    timeStr = timeStr,
+                    backdrop = backdrop
+                )
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -896,162 +826,248 @@ private fun CompassContentMain(
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
 
     val isGlass = appStyle == AppStyle.Glass
-    val dark = isDarkTheme()
 
     val cookie9Shape = ScaledShape(MaterialShapes.Cookie9Sided.toShape(), scale = 1.3f)
-    val arrowShape = MaterialShapes.Triangle.toShape()
     val archShape = ScaledShape(MaterialShapes.Arch.toShape(), scale = 1.2f)
     val squareShape = ScaledShape(MaterialShapes.Square.toShape(), scale = 1.2f)
     val cookie4Shape = ScaledShape(MaterialShapes.Cookie4Sided.toShape(), scale = 1.4f)
 
-    val compassShape by context.compassShapeFlow().collectAsState(initial = 0)
-    val selectedShape = CompassShapeRegistry.byId(compassShape).shapeFactory()
-
-    val showIntercardinals by context.showIntercardinalsFlow().collectAsState(initial = true)
     val showWeatherRow by context.showWeatherRowFlow().collectAsState(initial = true)
 
-
-    val primary = MaterialTheme.colorScheme.primary
-    val surface = MaterialTheme.colorScheme.surface
-    val surfaceVariant = MaterialTheme.colorScheme.surfaceVariant
     val secondaryContainer = MaterialTheme.colorScheme.secondaryContainer
 
-    val isLandscape = LocalConfiguration.current.orientation ==
-            android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    val isLandscape = LocalConfiguration.current.orientation == ORIENTATION_LANDSCAPE
 
     if (!isLandscape) {
         Column(
             modifier = modifier
-                .fillMaxWidth()
-                .wrapContentHeight(),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            CompassCanvas(
-                state = state,
-                appStyle = appStyle,
-                backdrop = backdrop,
-                modifier = Modifier.fillMaxSize()
-            )
-            val magMagnitude = sqrt(
-                state.magField.first*state.magField.first +
-                        state.magField.second*state.magField.second +
-                        state.magField.third*state.magField.third
-            )
-            Row(
+
+            val dark = isDarkTheme()
+            val arrowShape = MaterialShapes.Triangle.toShape()
+            val context = LocalContext.current
+
+            val isGlass = appStyle == AppStyle.Glass
+            val compassShape by context.compassShapeFlow().collectAsState(initial = 0)
+            val selectedShape = CompassShapeRegistry.byId(compassShape).shapeFactory()
+            val showIntercardinals by context.showIntercardinalsFlow().collectAsState(initial = true)
+
+            val primary = MaterialTheme.colorScheme.primary
+            val surface = MaterialTheme.colorScheme.surface
+            val surfaceVariant = MaterialTheme.colorScheme.surfaceVariant
+            val onSurface = MaterialTheme.colorScheme.onSurface
+
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(if (isGlass) 10.dp else 30.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(0.dp),
+                contentAlignment = Alignment.Center
             ) {
-                SensorCard(
-                    icon = R.drawable.ic_altitude,
-                    label = stringResource(R.string.altitude),
-                    value = "${state.baroAltitude.roundToInt()} m",
-                    shape = cookie4Shape,
-                    color = secondaryContainer,
-                    index=1,
-                    backdrop = backdrop,
-                    cornerRadius = 40.dp
-                )
+                Canvas(
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1f)
+                ) {
+                    val width = 0.8f
+                    val r = size.minDimension * width / 2
+                    val cx = center.x
+                    val cy = center.y
 
-                val pressurePsi = state.pressureHpa * 0.0145038f
+                    val shapeRadius = r
+                    val shapeSize = Size(shapeRadius * 2.3f, shapeRadius * 2.3f)
 
-                SensorCard(
-                    icon = R.drawable.ic_pressure,
-                    label = "PSI",
-                    value = "${pressurePsi.roundToInt()} psi",
-                    shape = archShape,
-                    color = secondaryContainer,
-                    index=2,
-                    backdrop = backdrop,
-                    cornerRadius = 40.dp
-                )
+                    if (appStyle == AppStyle.Material) {
+                        val outline = selectedShape.createOutline(shapeSize, layoutDirection, this)
+                        rotate(-state.azimuth, pivot = center) {
+                            // center it correctly using shapeSize
+                            translate(
+                                left = cx - shapeSize.width / 2f,
+                                top = cy - shapeSize.height / 2f
+                            ) {
+                                drawOutline(outline = outline, color = primary, style = Fill)
+                            }
+                        }
+                    }
 
-                SensorCard(
-                    icon = R.drawable.ic_calibration,
-                    label = "Mag",
-                    value = "${magMagnitude.roundToInt()} μT",
-                    shape = cookie4Shape,
-                    color = secondaryContainer,
-                    index=3,
-                    backdrop = backdrop,
-                    cornerRadius = 40.dp
-                )
 
+                    val tickColor = if (appStyle == AppStyle.Material) surfaceVariant else onSurface
+                    val tickVariant = if (appStyle == AppStyle.Material) surface else if (dark) Color.White else Color.Black
+
+                    rotate(-state.azimuth - 90f, pivot = center) {
+                        drawDial(tickColor, tickVariant, showIntercardinals = showIntercardinals, r = r)
+                    }
+
+                    val az = (state.azimuth % 360 + 360) % 360
+                    val arrowFill = if (az < 2f || az > 358f) Color.Red else surface
+
+                    drawNorthIndicator(
+                        x = cx,
+                        y = cy - r + (r * 0.65f),
+                        size = r * 0.2f,
+                        fillColor = arrowFill,
+                        arrowShape = arrowShape
+                    )
+
+                    drawContext.canvas.nativeCanvas.apply {
+                        val paint = Paint().apply {
+                            isAntiAlias = true
+                            color = tickVariant.toArgb()
+                            textSize = r * 0.35f
+                            textAlign = AndroidPaint.Align.CENTER
+                            style = AndroidPaint.Style.FILL_AND_STROKE
+                            strokeJoin = AndroidPaint.Join.ROUND
+                            strokeMiter = 10f
+                            strokeWidth = 4f
+                            isFakeBoldText = true
+                        }
+                        drawText("${state.azimuth.toInt()}°", cx, cy + paint.textSize / 3, paint)
+                    }
+                }
             }
-            Spacer(Modifier.height(30.dp))
-            val hasForecast = forecastJson.has("current")
 
-            if (hasForecast) {
-                val cur = forecastJson.getJSONObject("current")
-                val temp = cur.getDouble("temperature_2m")
-                val temperature = "${temp.roundToInt()}°C"
+            // --- Info Section (Sensor + Weather) ---
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // --- Sensor Row ---
+                val magMagnitude = sqrt(
+                    state.magField.first * state.magField.first +
+                            state.magField.second * state.magField.second +
+                            state.magField.third * state.magField.third
+                )
 
-                val hum = cur.getDouble("relative_humidity_2m")
-                val humidity = "${hum.roundToInt()}%"
-                when {
-                    locationPermissionState.status==PermissionStatus.Granted && temperature!="0.0" && showWeatherRow -> {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(if (isGlass) 10.dp else 30.dp, Alignment.CenterHorizontally),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            SensorCard(
-                                icon = R.drawable.ic_cloud,
-                                label = "Time",
-                                value = timeStr,
-                                shape = squareShape,
-                                color = secondaryContainer,
-                                index = 1,
-                                backdrop = backdrop
-                            )
-                            SensorCard(
-                                icon = R.drawable.ic_temperature,
-                                label = "Temp",
-                                value = temperature,
-                                shape = cookie9Shape,
-                                color = secondaryContainer,
-                                index = 2,
-                                backdrop = backdrop
-                            )
-                            SensorCard(
-                                icon = R.drawable.ic_humidity,
-                                label = "Humidity",
-                                value = humidity,
-                                shape = archShape,
-                                color = secondaryContainer,
-                                index = 3,
-                                backdrop = backdrop
-                            )
-                        }
-                        locationName?.let { name ->
-                            Spacer(Modifier.height(30.dp))
-                            LocationCard(
-                                name = name,
-                                index = 4,
-                                backdrop = backdrop
-                            )
-                        }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(
+                        if (isGlass) 10.dp else 30.dp,
+                        Alignment.CenterHorizontally
+                    ),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    SensorCard(
+                        icon = R.drawable.ic_altitude,
+                        label = stringResource(R.string.altitude),
+                        value = "${state.baroAltitude.roundToInt()} m",
+                        shape = cookie4Shape,
+                        color = secondaryContainer,
+                        index = 1,
+                        backdrop = backdrop,
+                        cornerRadius = 40.dp
+                    )
 
-                    }
-                    locationPermissionState.status is PermissionStatus.Denied -> {
-                        // Ask for location access
-                        Button(
-                            onClick = { locationPermissionState.launchPermissionRequest() },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Allow Location Services")
-                        }
-                    }
-                    else -> { }
+                    val pressurePsi = state.pressureHpa * 0.0145038f
+
+                    SensorCard(
+                        icon = R.drawable.ic_pressure,
+                        label = "PSI",
+                        value = "${pressurePsi.roundToInt()} psi",
+                        shape = archShape,
+                        color = secondaryContainer,
+                        index = 2,
+                        backdrop = backdrop,
+                        cornerRadius = 40.dp
+                    )
+
+                    SensorCard(
+                        icon = R.drawable.ic_calibration,
+                        label = "Mag",
+                        value = "${magMagnitude.roundToInt()} μT",
+                        shape = cookie4Shape,
+                        color = secondaryContainer,
+                        index = 3,
+                        backdrop = backdrop,
+                        cornerRadius = 40.dp
+                    )
                 }
 
+                Spacer(Modifier.height(if (isGlass) 10.dp else 30.dp))
+
+                // --- Weather Row ---
+                val hasForecast = forecastJson.has("current")
+                if (hasForecast) {
+                    val cur = forecastJson.getJSONObject("current")
+                    val temp = cur.getDouble("temperature_2m")
+                    val temperature = "${temp.roundToInt()}°C"
+                    val hum = cur.getDouble("relative_humidity_2m")
+                    val humidity = "${hum.roundToInt()}%"
+
+                    when {
+                        locationPermissionState.status == PermissionStatus.Granted &&
+                                temperature != "0.0" && showWeatherRow -> {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(
+                                    if (isGlass) 10.dp else 30.dp,
+                                    Alignment.CenterHorizontally
+                                ),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                SensorCard(
+                                    icon = R.drawable.ic_clock,
+                                    label = "Time",
+                                    value = timeStr,
+                                    shape = squareShape,
+                                    color = secondaryContainer,
+                                    index = 1,
+                                    backdrop = backdrop
+                                )
+                                SensorCard(
+                                    icon = R.drawable.ic_temperature,
+                                    label = "Temp",
+                                    value = temperature,
+                                    shape = cookie9Shape,
+                                    color = secondaryContainer,
+                                    index = 2,
+                                    backdrop = backdrop
+                                )
+                                SensorCard(
+                                    icon = R.drawable.ic_humidity,
+                                    label = "Humidity",
+                                    value = humidity,
+                                    shape = archShape,
+                                    color = secondaryContainer,
+                                    index = 3,
+                                    backdrop = backdrop
+                                )
+                            }
+
+                            locationName?.let { name ->
+                                Spacer(Modifier.height(30.dp))
+                                LocationCard(
+                                    name = name,
+                                    index = 4,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
+                            }
+                        }
+
+                        locationPermissionState.status is PermissionStatus.Denied -> {
+                            Button(
+                                onClick = { locationPermissionState.launchPermissionRequest() },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Allow Location Services")
+                            }
+                        }
+
+                        else -> {}
+                    }
+                }
             }
         }
     }
+
+
     else {
         Row(
             modifier = modifier
@@ -1069,9 +1085,7 @@ private fun CompassContentMain(
             ) {
                 CompassCanvas(
                     state = state,
-                    appStyle = appStyle,
-                    backdrop = backdrop,
-                    modifier = Modifier.fillMaxSize()
+                    appStyle = appStyle
                 )
             }
 
@@ -1193,8 +1207,7 @@ private fun CompassContentMain(
                             Spacer(Modifier.height(30.dp))
                             LocationCard(
                                 name = name,
-                                index = 4,
-                                backdrop = backdrop
+                                index = 4
                             )
                         }
                     } else if (locationPermissionState.status is PermissionStatus.Denied) {
@@ -1238,7 +1251,9 @@ private fun WeatherAndLocationSection(
 
     Column(
         modifier = Modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .padding(horizontal = 10.dp)
+            .padding(top = 20.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -1433,34 +1448,40 @@ fun DrawScope.drawDial(
 ) {
     val inset = 24f
 
-    for (i in 0 until 360 step 5) {
+    val step = 2.5f
+    val steps = (0..(360 / step).toInt())
+
+    for (j in steps) {
+        val i = j * step
         val angle = Math.toRadians(i.toDouble()).toFloat()
         val length = 40f
         val stroke = when {
-            i % 90 == 0 -> 10f
-            i % 45 == 0 -> 6f
+            i % 90 == 0f -> 10f
+            i % 45 == 0f -> 6f
             else -> 4f
         }
 
-        val startRadius = if (i % 45 == 0) r - length - inset else r - length - inset / 2f
-        val endRadius   = r - inset
+        val startRadius = if (i % 45 == 0f) r - length - inset else r - length - inset / 2f
+        val endRadius = r - inset
 
         val start = center + Offset(startRadius * cos(angle), startRadius * sin(angle))
-        val end   = center + Offset(endRadius   * cos(angle), endRadius   * sin(angle))
+        val end = center + Offset(endRadius * cos(angle), endRadius * sin(angle))
 
         val color = when {
-            i == 0 -> Color.Red
-            i % 90 == 0 -> tickVariantColor
+            i == 0f -> Color.Red
+            i % 90 == 0f -> tickVariantColor
             else -> tickColor
         }
+
         drawLine(
-            color,
-            start,
-            end,
+            color = color,
+            start = start,
+            end = end,
             strokeWidth = stroke,
             cap = StrokeCap.Round
         )
     }
+
 
     // Labels
     val base = mutableListOf("N" to 0f, "E" to 90f, "S" to 180f, "W" to 270f)
@@ -1508,11 +1529,6 @@ private fun DrawScope.drawNorthIndicator(
     val half = size / 2f
     translate(left = x - half, top = y - half) {
         drawOutline(outline, color = fillColor, style = Fill)
-//        drawOutline(
-//            outline,
-//            color = if (fillColor.luminance() > 0.5f) Color.Black else Color.White,
-//            style = Stroke(width = 4f)
-//        )
     }
 }
 
@@ -1523,14 +1539,11 @@ private val DrawScope.radius get() = size.minDimension / 1.7f
 fun CompassCanvas(
     state: CompassState,
     appStyle: AppStyle,
-    backdrop: Backdrop,
-    modifier: Modifier = Modifier
 ) {
     val dark = isDarkTheme()
     val arrowShape = MaterialShapes.Triangle.toShape()
     val context = LocalContext.current
 
-    val isGlass = appStyle == AppStyle.Glass
     val compassShape by context.compassShapeFlow().collectAsState(initial = 0)
     val selectedShape = CompassShapeRegistry.byId(compassShape).shapeFactory()
     val showIntercardinals by context.showIntercardinalsFlow().collectAsState(initial = true)
@@ -1538,6 +1551,7 @@ fun CompassCanvas(
     val primary = MaterialTheme.colorScheme.primary
     val surface = MaterialTheme.colorScheme.surface
     val surfaceVariant = MaterialTheme.colorScheme.surfaceVariant
+    val onSurface = MaterialTheme.colorScheme.onSurface
 
     Box(
         modifier = Modifier
@@ -1545,216 +1559,181 @@ fun CompassCanvas(
             .aspectRatio(1f),
         contentAlignment = Alignment.Center
     ) {
-        if (isGlass){
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(0.95f)
-                    .aspectRatio(1f)
-                    .drawBackdrop(
-                        backdrop = backdrop,
-                        effects =  {
-                            vibrancy()
-                            blur(4.dp.toPx())
-                            lens(
-                                refractionHeight = 24.dp.toPx(),
-                                refractionAmount = 60.dp.toPx(),
-                                depthEffect = true
-                            )
-                        },
-                        shape = { RoundedCornerShape(percent = 50) },
-                        onDrawSurface = { drawRect(if(dark) Color(0xFF313131).copy(alpha = 0.2f) else Color(0xFFBDBDBD).copy(alpha = 0.2f)) }
-                    )
-            ) {
-                Canvas(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .aspectRatio(1f)
-                ) {
-                    val r = size.minDimension / 2f
-                    val cx = center.x
-                    val cy = center.y
+//        if (isGlass){
+//
+////            Box(
+////                modifier = Modifier
+////                    .fillMaxSize(0.7f)
+////                    .aspectRatio(1f)
+//////                    .drawBackdrop(
+//////                        backdrop = backdrop,
+//////                        effects =  {
+//////                            vibrancy()
+//////                            blur(4.dp.toPx())
+//////                            lens(
+//////                                refractionHeight = 24.dp.toPx(),
+//////                                refractionAmount = 60.dp.toPx(),
+//////                                depthEffect = true
+//////                            )
+//////                        },
+//////                        shape = { RoundedCornerShape(percent = 50) },
+//////                        onDrawSurface = { drawRect(if(dark) Color(0xFF313131).copy(alpha = 0.2f) else Color(0xFFBDBDBD).copy(alpha = 0.2f)) }
+//////                    )
+////            ) {
+////                Canvas(
+////                    modifier = Modifier
+////                        .matchParentSize()
+////                        .aspectRatio(1f)
+////                ) {
+////                    val r = size.minDimension / 2f
+////                    val cx = center.x
+////                    val cy = center.y
+////
+////                    // dial ticks
+////                    rotate(-state.azimuth - 90f, pivot = center) {
+////                        drawDial(
+////                            tickColor = if (dark) Color.White else Color.Black,
+////                            tickVariantColor = if (dark) Color.White else Color.Black,
+////                            showIntercardinals = showIntercardinals,
+////                            r = r
+////                        )
+////                    }
+////
+////                    // north indicator
+////                    val az = (state.azimuth % 360 + 360) % 360
+////                    val nearNorth = az < 2f || az > 358f
+////                    val arrowFill = if (nearNorth) Color.Red else if (dark) Color.White else Color.Black
+////
+////                    drawNorthIndicator(
+////                        x = cx,
+////                        y = cy - r + (r * 0.65f),
+////                        size = r * 0.2f,
+////                        fillColor = arrowFill,
+////                        arrowShape = arrowShape
+////                    )
+////
+////                    // text
+////                    drawContext.canvas.nativeCanvas.apply {
+////                        val paint = Paint().apply {
+////                            isAntiAlias = true
+////                            color = (if (dark) Color.White else Color.Black).toArgb()
+////                            textSize = r * 0.35f
+////                            textAlign = AndroidPaint.Align.CENTER
+////                            style = AndroidPaint.Style.FILL_AND_STROKE
+////                            strokeWidth = 4f
+////                            isFakeBoldText = true
+////                        }
+////                        drawText("${state.azimuth.toInt()}°", cx, cy + paint.textSize / 3, paint)
+////                    }
+////                }
+////            }
+//        }
+//        else{
+//            Canvas(Modifier.fillMaxSize(0.65f)) {
+//                val r = radius
+//                val cx = center.x
+//                val cy = center.y
+//
+//                val shapePadding = r * -0.20f
+//                val shapeRadius = r - shapePadding
+//                val shapeSize = Size(shapeRadius * 2f, shapeRadius * 2f)
+//
+//                if (appStyle== AppStyle.Material) {
+//                    val outline = selectedShape.createOutline(shapeSize, layoutDirection, this)
+//                    rotate(-state.azimuth, pivot = center) {
+//                        translate(left = cx - shapeRadius, top = cy - shapeRadius) {
+//                            drawOutline(outline = outline, color = primary, style = Fill)
+//                        }
+//                    }
+//                }
+//
+//                rotate(-state.azimuth - 90f, pivot = center) {
+//                    drawDial(surfaceVariant, surface, showIntercardinals = showIntercardinals,
+//                        r = r
+//                    )
+//                }
+//
+//                val az = (state.azimuth % 360 + 360) % 360
+//                val nearNorth = az < 2f || az > 358f
+////            val arrowFill = if (nearNorth) Color.Red else if (waypoint != null && abs(az - waypoint.roundToInt()) < 2) waypointColor else surface
+//                val arrowFill = if (nearNorth) Color.Red else surface
+//
+//                drawNorthIndicator(
+//                    x = cx,
+//                    y = cy - r + (r * 0.65f),
+//                    size = r * 0.2f,
+//                    fillColor = arrowFill,
+//                    arrowShape = arrowShape
+//                )
+//                drawContext.canvas.nativeCanvas.apply {
+//                    val paint = Paint().apply {
+//                        isAntiAlias = true
+//                        color = surface.toArgb()
+//                        textSize = r * 0.35f
+//                        textAlign = AndroidPaint.Align.CENTER
+//                        style = AndroidPaint.Style.FILL_AND_STROKE
+//                        strokeJoin = AndroidPaint.Join.ROUND
+//                        strokeMiter = 10f
+//                        strokeWidth = 4f
+//                        isFakeBoldText = true
+//                    }
+//                    drawText("${state.azimuth.toInt()}°", cx, cy + paint.textSize / 3, paint)
+//                }
+//
+//            }
+//        }
+        Canvas(Modifier.fillMaxSize(0.65f)) {
+            val r = radius
+            val cx = center.x
+            val cy = center.y
 
-                    // dial ticks
-                    rotate(-state.azimuth - 90f, pivot = center) {
-                        drawDial(
-                            tickColor = if (dark) Color.White else Color.Black,
-                            tickVariantColor = if (dark) Color.White else Color.Black,
-                            showIntercardinals = showIntercardinals,
-                            r = r
-                        )
-                    }
+            val shapePadding = r * -0.20f
+            val shapeRadius = r - shapePadding
+            val shapeSize = Size(shapeRadius * 2f, shapeRadius * 2f)
 
-                    // north indicator
-                    val az = (state.azimuth % 360 + 360) % 360
-                    val nearNorth = az < 2f || az > 358f
-                    val arrowFill = if (nearNorth) Color.Red else if (dark) Color.White else Color.Black
-
-                    drawNorthIndicator(
-                        x = cx,
-                        y = cy - r + (r * 0.65f),
-                        size = r * 0.2f,
-                        fillColor = arrowFill,
-                        arrowShape = arrowShape
-                    )
-
-                    // text
-                    drawContext.canvas.nativeCanvas.apply {
-                        val paint = Paint().apply {
-                            isAntiAlias = true
-                            color = (if (dark) Color.White else Color.Black).toArgb()
-                            textSize = r * 0.35f
-                            textAlign = AndroidPaint.Align.CENTER
-                            style = AndroidPaint.Style.FILL_AND_STROKE
-                            strokeWidth = 4f
-                            isFakeBoldText = true
-                        }
-                        drawText("${state.azimuth.toInt()}°", cx, cy + paint.textSize / 3, paint)
+            if (appStyle== AppStyle.Material) {
+                val outline = selectedShape.createOutline(shapeSize, layoutDirection, this)
+                rotate(-state.azimuth, pivot = center) {
+                    translate(left = cx - shapeRadius, top = cy - shapeRadius) {
+                        drawOutline(outline = outline, color = primary, style = Fill)
                     }
                 }
             }
-        }
-        else{
-            Canvas(Modifier.fillMaxSize(0.65f)) {
-                val r = radius
-                val cx = center.x
-                val cy = center.y
+            val tickColor = if (appStyle== AppStyle.Material) surfaceVariant else onSurface
+            val tickColorVarient = if (appStyle== AppStyle.Material) surface else if (dark) Color.White else Color.Black
 
-                val shapePadding = r * -0.20f
-                val shapeRadius = r - shapePadding
-                val shapeSize = Size(shapeRadius * 2f, shapeRadius * 2f)
-
-                if (appStyle== AppStyle.Playful) {
-                    val outline = selectedShape.createOutline(shapeSize, layoutDirection, this)
-                    rotate(-state.azimuth, pivot = center) {
-                        translate(left = cx - shapeRadius, top = cy - shapeRadius) {
-                            drawOutline(outline = outline, color = primary, style = Fill)
-                        }
-                    }
-                }
-
-                rotate(-state.azimuth - 90f, pivot = center) {
-                    drawDial(surfaceVariant, surface, showIntercardinals = showIntercardinals,
-                        r = r
-                    )
-                }
-
-                val az = (state.azimuth % 360 + 360) % 360
-                val nearNorth = az < 2f || az > 358f
-//            val arrowFill = if (nearNorth) Color.Red else if (waypoint != null && abs(az - waypoint.roundToInt()) < 2) waypointColor else surface
-                val arrowFill = if (nearNorth) Color.Red else surface
-
-                drawNorthIndicator(
-                    x = cx,
-                    y = cy - r + (r * 0.65f),
-                    size = r * 0.2f,
-                    fillColor = arrowFill,
-                    arrowShape = arrowShape
+            rotate(-state.azimuth - 90f, pivot = center) {
+                drawDial(tickColor, tickColorVarient, showIntercardinals = showIntercardinals,
+                    r = r
                 )
-                drawContext.canvas.nativeCanvas.apply {
-                    val paint = Paint().apply {
-                        isAntiAlias = true
-                        color = surface.toArgb()
-                        textSize = r * 0.35f
-                        textAlign = AndroidPaint.Align.CENTER
-                        style = AndroidPaint.Style.FILL_AND_STROKE
-                        strokeJoin = AndroidPaint.Join.ROUND
-                        strokeMiter = 10f
-                        strokeWidth = 4f
-                        isFakeBoldText = true
-                    }
-                    drawText("${state.azimuth.toInt()}°", cx, cy + paint.textSize / 3, paint)
-                }
-
             }
-        }
 
-    }
-}
+            val az = (state.azimuth % 360 + 360) % 360
+            val nearNorth = az < 2f || az > 358f
+            val arrowFill = if (nearNorth) Color.Red else surface
 
-
-@OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-private fun CompassInfoPanel(
-    state: CompassState,
-    backdrop: Backdrop,
-    appStyle: AppStyle,
-    forecastJson: JSONObject,
-    timeStr: String,
-    locationName: String?,
-    modifier: Modifier = Modifier
-) {
-    val isGlass = appStyle == AppStyle.Glass
-
-    val archShape    = ScaledShape(MaterialShapes.Arch.toShape(), scale = 1.2f)
-    val cookie4Shape = ScaledShape(MaterialShapes.Cookie4Sided.toShape(), scale = 1.4f)
-    val secondaryContainer = MaterialTheme.colorScheme.secondaryContainer
-
-    val magMagnitude = sqrt(
-        state.magField.first*state.magField.first +
-                state.magField.second*state.magField.second +
-                state.magField.third*state.magField.third
-    )
-
-    val scroll = rememberScrollState()
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .verticalScroll(scroll),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(if (isGlass) 10.dp else 30.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            SensorCard(
-                icon = R.drawable.ic_altitude,
-                label = stringResource(R.string.altitude),
-                value = "${state.baroAltitude.roundToInt()} m",
-                shape = cookie4Shape,
-                color = secondaryContainer,
-                index = 1,
-                backdrop = backdrop,
-                cornerRadius = 40.dp
+            drawNorthIndicator(
+                x = cx,
+                y = cy - r + (r * 0.65f),
+                size = r * 0.2f,
+                fillColor = arrowFill,
+                arrowShape = arrowShape
             )
-            val pressurePsi = state.pressureHpa * 0.0145038f
-            SensorCard(
-                icon = R.drawable.ic_pressure,
-                label = "PSI",
-                value = "${pressurePsi.roundToInt()} psi",
-                shape = archShape,
-                color = secondaryContainer,
-                index = 2,
-                backdrop = backdrop,
-                cornerRadius = 40.dp
-            )
-            SensorCard(
-                icon = R.drawable.ic_calibration,
-                label = "Mag",
-                value = "${magMagnitude.roundToInt()} μT",
-                shape = cookie4Shape,
-                color = secondaryContainer,
-                index = 3,
-                backdrop = backdrop,
-                cornerRadius = 40.dp
-            )
-        }
+            drawContext.canvas.nativeCanvas.apply {
+                val paint = Paint().apply {
+                    isAntiAlias = true
+                    color = tickColorVarient.toArgb()
+                    textSize = r * 0.35f
+                    textAlign = AndroidPaint.Align.CENTER
+                    style = AndroidPaint.Style.FILL_AND_STROKE
+                    strokeJoin = AndroidPaint.Join.ROUND
+                    strokeMiter = 10f
+                    strokeWidth = 4f
+                    isFakeBoldText = true
+                }
+                drawText("${state.azimuth.toInt()}°", cx, cy + paint.textSize / 3, paint)
+            }
 
-        Spacer(Modifier.height(30.dp))
-
-        // --- weather / location block you already have ---
-        WeatherAndLocationSection(
-            appStyle = appStyle,
-            forecastJson = forecastJson,
-            timeStr = timeStr,
-            backdrop = backdrop
-        )
-
-        locationName?.let { name ->
-            Spacer(Modifier.height(30.dp))
-            LocationCard(name = name, index = 4, backdrop = backdrop)
         }
     }
 }

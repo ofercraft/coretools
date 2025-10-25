@@ -410,7 +410,7 @@ fun CompassTile(
     var showSettings by remember { mutableStateOf(false) }
 
     val backdrop = rememberLayerBackdrop()
-    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Playful)
+    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
     val isGlass = appStyle == AppStyle.Glass
     val dark = isSystemInDarkTheme()
 

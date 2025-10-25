@@ -56,7 +56,7 @@ fun CompassSettingsPage(navController: NavController = rememberNavController(), 
     val vibrationFeedback by context.compassVibrationFeedbackFlow().collectAsState(initial = true)
 
 
-    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Playful)
+    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
     val isGlass = appStyle == AppStyle.Glass
 
     val backdrop = rememberLayerBackdrop()

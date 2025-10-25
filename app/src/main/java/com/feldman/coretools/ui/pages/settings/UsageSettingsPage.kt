@@ -43,7 +43,7 @@ fun UsageSettingsPage(navController: NavController) {
     val scope = rememberCoroutineScope()
 
     val backdrop = rememberLayerBackdrop()
-    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Playful)
+    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
     val isGlass = appStyle == AppStyle.Glass
     val dark = isDarkTheme()
 

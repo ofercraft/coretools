@@ -67,7 +67,7 @@ private fun WeatherPage(modifier: Modifier = Modifier) {
     val backdrop = rememberLayerBackdrop()
 
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
-    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Playful)
+    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
 
     var timeStr by remember { mutableStateOf("--:--") }
     var forecastJson by remember { mutableStateOf(JSONObject()) }

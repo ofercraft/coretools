@@ -1,5 +1,6 @@
 package com.feldman.coretools.ui.components.adaptive
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.Slider
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -12,10 +13,12 @@ import com.feldman.coretools.ui.tiles.isCloseTo
 import com.kyant.backdrop.Backdrop
 import kotlinx.coroutines.FlowPreview
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
+import com.feldman.coretools.ui.pages.scaled
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.collectLatest
 
@@ -50,7 +53,7 @@ fun AdaptiveSlider(
             visibilityThreshold = visibilityThreshold,
             backdrop = backdrop,
             modifier = modifier
-                .height(60.dp),
+                .height(scaled(60.dp)),
         )
 
         LaunchedEffect(value) {
@@ -82,10 +85,19 @@ fun AdaptiveSlider(
             modifier = modifier,
             track = { sliderState ->
                 SliderDefaults.Track(
-                    modifier = Modifier.height(28.dp),
+                    modifier = Modifier.height(scaled(28.dp)),
                     sliderState = sliderState
                 )
             },
+            thumb = {
+                SliderDefaults.Thumb(
+                    interactionSource = MutableInteractionSource(),
+                    modifier = Modifier.size(
+                        width = scaled(4.dp),
+                        height = scaled(48.dp)
+                    )
+                )
+            }
         )
     }
 }

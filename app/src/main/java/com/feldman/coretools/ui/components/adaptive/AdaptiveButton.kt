@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.dp
 import com.feldman.coretools.storage.AppStyle
 import com.feldman.coretools.storage.appStyleFlow
 import com.feldman.coretools.ui.components.liquid.LiquidButton
+import com.feldman.coretools.ui.pages.scaled
+import com.feldman.coretools.ui.pages.scaledHeight
 import com.kyant.backdrop.Backdrop
 
 @Composable
@@ -44,7 +46,7 @@ fun AdaptiveButton(
         Button(
             onClick = onClick,
             modifier = modifier
-                .height(48.dp),
+                .height(scaledHeight(48.dp)),
             colors = ButtonDefaults.buttonColors(
                 containerColor = if (surfaceColor.isSpecified) surfaceColor else MaterialTheme.colorScheme.primary,
                 contentColor = if (tint.isSpecified) tint else MaterialTheme.colorScheme.onPrimary

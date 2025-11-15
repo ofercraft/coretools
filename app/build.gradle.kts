@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.21"
+    id("kotlin-parcelize")
 }
 
 android {
@@ -15,8 +17,8 @@ android {
         applicationId = "com.feldman.coretools"
         minSdk = 34
         targetSdk = 36
-        versionCode = 12
-        versionName = "2.1"
+        versionCode = 13
+        versionName = "2.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -81,6 +83,7 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.swiperefreshlayout)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.navigation3.ui)
     ksp(libs.androidx.room.compiler)
     implementation(libs.room.ktx)
 

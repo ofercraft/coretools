@@ -6,13 +6,14 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.feldman.coretools.Dest
+import com.feldman.coretools.ordered
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import com.feldman.coretools.MainActivity.Dest
 val Context.dataStore by preferencesDataStore(name = "usage_prefs")
 object PrefKeys {
     //App
-    val DEFAULT_PAGE = stringPreferencesKey("default_page")
+    val DEFAULT_PAGE = intPreferencesKey("default_page")
 
 
     //Customization
@@ -60,15 +61,21 @@ object PrefKeys {
 
 //App
 data class DefaultPage(val dest: Dest)
+
 fun Context.defaultPageFlow(): Flow<Dest> =
     dataStore.data.map { prefs ->
-        val key = prefs[PrefKeys.DEFAULT_PAGE]
-        Dest.entries.find { it.name == key } ?: Dest.Flashlight
+        val idx = prefs[PrefKeys.DEFAULT_PAGE] ?: ordered.indexOf(Dest.Flashlight)
+        ordered.getOrNull(idx) ?: Dest.Flashlight
     }
 
+
 suspend fun Context.setDefaultPage(dest: Dest) {
-    dataStore.edit { it[PrefKeys.DEFAULT_PAGE] = dest.name }
+    dataStore.edit {
+        it[PrefKeys.DEFAULT_PAGE] = ordered.indexOf(dest)
+    }
 }
+
+
 
 
 

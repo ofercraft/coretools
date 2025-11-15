@@ -121,6 +121,7 @@ fun HourlyForecastCard(
         modifier = Modifier
             .fillMaxWidth()
             .height(160.dp)
+            .padding(horizontal = 36.dp)
             .background(
                 if (isGlass) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.secondaryContainer,
                 RoundedCornerShape(32.dp)

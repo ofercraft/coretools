@@ -175,8 +175,7 @@ fun FlashlightTile(onDismiss: () -> Unit) {
                             shape = cookie4Shape,
                             color = secondaryContainer,
                             index = 1,
-                            backdrop = backdrop,
-                            cornerRadius = 50.dp
+                            backdrop = backdrop
                         )
                         SensorCard(
                             icon = R.drawable.ic_layers,
@@ -185,8 +184,7 @@ fun FlashlightTile(onDismiss: () -> Unit) {
                             shape = archShape,
                             color = secondaryContainer,
                             index = 2,
-                            backdrop = backdrop,
-                            cornerRadius = 50.dp
+                            backdrop = backdrop
                         )
                     }
 

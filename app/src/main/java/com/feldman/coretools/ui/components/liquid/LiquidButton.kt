@@ -20,6 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceAtMost
 import androidx.compose.ui.util.lerp
 import com.feldman.coretools.ui.components.utils.InteractiveHighlight
+import com.feldman.coretools.ui.pages.scaled
+import com.feldman.coretools.ui.pages.scaledHeight
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
@@ -113,7 +115,7 @@ fun LiquidButton(
                     Modifier
                 }
             )
-            .height(48f.dp)
+            .height(scaledHeight(48f.dp))
             .padding(horizontal = 16f.dp),
         horizontalArrangement = Arrangement.spacedBy(8f.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,

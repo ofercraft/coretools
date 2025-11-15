@@ -1,9 +1,12 @@
+@file:Suppress("PROPERTY_WONT_BE_SERIALIZED")
+
 package com.feldman.coretools
 
 import android.app.Application
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.os.Bundle
+import android.os.Parcelable
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
@@ -46,56 +49,513 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.feldman.coretools.MainActivity.Dest
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.rememberNavBackStack
+import com.feldman.coretools.Dest.Compass
+import com.feldman.coretools.Dest.Flashlight
+import com.feldman.coretools.Dest.Level
+import com.feldman.coretools.Dest.Settings
+import com.feldman.coretools.Dest.SettingsApp
+import com.feldman.coretools.Dest.SettingsCompass
+import com.feldman.coretools.Dest.SettingsCustomization
+import com.feldman.coretools.Dest.SettingsFlash
+import com.feldman.coretools.Dest.SettingsLevel
+import com.feldman.coretools.Dest.SettingsSpeedometer
+import com.feldman.coretools.Dest.SettingsTile
+import com.feldman.coretools.Dest.SettingsUsage
+import com.feldman.coretools.Dest.Speedometer
+import com.feldman.coretools.Dest.Usage
 import com.feldman.coretools.storage.AppStyle
 import com.feldman.coretools.storage.OrientationMode
 import com.feldman.coretools.storage.PrefKeys
 import com.feldman.coretools.storage.appStyleFlow
 import com.feldman.coretools.storage.dataStore
+import com.feldman.coretools.storage.defaultPageFlow
 import com.feldman.coretools.storage.orientationModeFlow
 import com.feldman.coretools.ui.components.AnimatedSpeedOutlineIcon
+import com.feldman.coretools.ui.components.SideAppBar
+import com.feldman.coretools.ui.components.liquid.CustomLiquidBottomBar
 import com.feldman.coretools.ui.components.liquid.LiquidBottomTab
 import com.feldman.coretools.ui.components.liquid.LiquidBottomTabs
+import com.feldman.coretools.ui.components.material.CustomFloatingBottomBar
 import com.feldman.coretools.ui.navigation.AppNavHost
+import com.feldman.coretools.ui.pages.CompassPage
+import com.feldman.coretools.ui.pages.FlashlightPage
+import com.feldman.coretools.ui.pages.LevelPage
+import com.feldman.coretools.ui.pages.SettingsPage
+import com.feldman.coretools.ui.pages.SpeedometerPage
+import com.feldman.coretools.ui.pages.UsageScreen
+import com.feldman.coretools.ui.pages.scaledWidth
+import com.feldman.coretools.ui.pages.settings.AppSettingsPage
+import com.feldman.coretools.ui.pages.settings.CompassSettingsPage
+import com.feldman.coretools.ui.pages.settings.CustomizationSettingsPage
+import com.feldman.coretools.ui.pages.settings.FlashlightSettingsPage
+import com.feldman.coretools.ui.pages.settings.LevelSettingsPage
+import com.feldman.coretools.ui.pages.settings.SpeedometerSettingsPage
+import com.feldman.coretools.ui.pages.settings.TileSettingsPage
+import com.feldman.coretools.ui.pages.settings.UsageSettingsPage
 import com.feldman.coretools.ui.theme.AppTheme
+import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Serializer
 
 
 val LocalAppOrientation = compositionLocalOf { OrientationMode.AUTO }
+val BottomSpacer = 100.dp
+
+@Serializable
+sealed interface Dest : NavKey, Parcelable {
+    val label: String
+    val filledIcon: Int
+    val outlineIcon: Int
+    val parent: Dest? get() = null
+
+    @Composable
+    fun Content(
+        onNavigate: (Dest) -> Unit,
+        onBack: () -> Unit,
+        backdrop: LayerBackdrop
+    )
+
+    // MAIN
+    @Parcelize
+    @Serializable
+    data object Flashlight : Dest {
+        override val label = "Flash"
+        override val filledIcon = R.drawable.ic_flashlight
+        override val outlineIcon = R.drawable.ic_flashlight_outline
+
+        @Composable
+        override fun Content(
+            onNavigate: (Dest) -> Unit,
+            onBack: () -> Unit,
+            backdrop: LayerBackdrop
+        ) {
+            FlashlightPage()
+        }
+    }
+
+    @Parcelize
+    @Serializable
+    data object Compass : Dest {
+        override val label = "Compass"
+        override val filledIcon = R.drawable.ic_compass
+        override val outlineIcon = R.drawable.ic_compass_outline
+
+        @Composable
+        override fun Content(
+            onNavigate: (Dest) -> Unit,
+            onBack: () -> Unit,
+            backdrop: LayerBackdrop
+        ) {
+            CompassPage()
+        }
+    }
+
+    @Parcelize
+    @Serializable
+    data object Speedometer : Dest {
+        override val label = "Speed"
+        override val filledIcon = R.drawable.ic_speed
+        override val outlineIcon = R.drawable.ic_speed_outline
+
+        @Composable
+        override fun Content(
+            onNavigate: (Dest) -> Unit,
+            onBack: () -> Unit,
+            backdrop: LayerBackdrop
+        ) {
+            SpeedometerPage()
+        }
+    }
+
+    @Parcelize
+    @Serializable
+    data object Usage : Dest {
+        override val label = "Usage"
+        override val filledIcon = R.drawable.ic_usage
+        override val outlineIcon = R.drawable.ic_usage_outline
+
+        @Composable
+        override fun Content(
+            onNavigate: (Dest) -> Unit,
+            onBack: () -> Unit,
+            backdrop: LayerBackdrop
+        ) {
+            UsageScreen()
+        }
+    }
+
+    @Parcelize
+    @Serializable
+    data object Level : Dest {
+        override val label = "Level"
+        override val filledIcon = R.drawable.ic_level
+        override val outlineIcon = R.drawable.ic_level_outline
+
+        @Composable
+        override fun Content(
+            onNavigate: (Dest) -> Unit,
+            onBack: () -> Unit,
+            backdrop: LayerBackdrop
+        ) {
+            val backdrop = rememberLayerBackdrop()
+            LevelPage(modifier = Modifier.layerBackdrop(backdrop))
+        }
+    }
+
+    @Parcelize
+    @Serializable
+    data object Settings : Dest {
+        override val label = "Settings"
+        override val filledIcon = R.drawable.ic_settings
+        override val outlineIcon = R.drawable.ic_settings_outline
+
+        @Composable
+        override fun Content(
+            onNavigate: (Dest) -> Unit,
+            onBack: () -> Unit,
+            backdrop: LayerBackdrop
+        ) {
+            SettingsPage(onNavigate)
+        }
+    }
+
+    // SETTINGS SUBPAGES
+    @Parcelize @Serializable
+    data object SettingsApp : Dest {
+        override val label = "App Settings"
+        override val filledIcon = R.drawable.ic_apps
+        override val outlineIcon = R.drawable.ic_apps
+        override val parent = Settings
+
+        @Composable
+        override fun Content(
+            onNavigate: (Dest) -> Unit,
+            onBack: () -> Unit,
+            backdrop: LayerBackdrop
+        ) {
+            AppSettingsPage(onBack = onBack)
+        }
+    }
+
+    @Parcelize @Serializable
+    data object SettingsCustomization : Dest {
+        override val label = "Customization"
+        override val filledIcon = R.drawable.ic_palette
+        override val outlineIcon = R.drawable.ic_palette_outline
+        override val parent = Settings
+
+        @Composable
+        override fun Content(
+            onNavigate: (Dest) -> Unit,
+            onBack: () -> Unit,
+            backdrop: LayerBackdrop
+        ) {
+            CustomizationSettingsPage(onBack = onBack)
+        }
+    }
+
+    @Parcelize @Serializable
+    data object SettingsFlash : Dest {
+        override val label = "Flash Settings"
+        override val filledIcon = R.drawable.ic_flashlight
+        override val outlineIcon = R.drawable.ic_flashlight_outline
+        override val parent = Settings
+
+        @Composable
+        override fun Content(
+            onNavigate: (Dest) -> Unit,
+            onBack: () -> Unit,
+            backdrop: LayerBackdrop
+        ) {
+            FlashlightSettingsPage(onBack = onBack)
+        }
+    }
+
+    @Parcelize @Serializable
+    data object SettingsCompass : Dest {
+        override val label = "Compass Settings"
+        override val filledIcon = R.drawable.ic_compass
+        override val outlineIcon = R.drawable.ic_compass_outline
+        override val parent = Settings
+
+        @Composable
+        override fun Content(
+            onNavigate: (Dest) -> Unit,
+            onBack: () -> Unit,
+            backdrop: LayerBackdrop
+        ) {
+            CompassSettingsPage(onBack = onBack)
+        }
+    }
+
+    @Parcelize @Serializable
+    data object SettingsSpeedometer : Dest {
+        override val label = "Speedometer Settings"
+        override val filledIcon = R.drawable.ic_speed
+        override val outlineIcon = R.drawable.ic_speed_outline
+        override val parent = Settings
+
+        @Composable
+        override fun Content(
+            onNavigate: (Dest) -> Unit,
+            onBack: () -> Unit,
+            backdrop: LayerBackdrop
+        ) {
+            SpeedometerSettingsPage(onBack = onBack)
+        }
+    }
+
+    @Parcelize @Serializable
+    data object SettingsUsage : Dest {
+        override val label = "Usage Settings"
+        override val filledIcon = R.drawable.ic_usage
+        override val outlineIcon = R.drawable.ic_usage_outline
+        override val parent = Settings
+
+        @Composable
+        override fun Content(
+            onNavigate: (Dest) -> Unit,
+            onBack: () -> Unit,
+            backdrop: LayerBackdrop
+        ) {
+            UsageSettingsPage(onBack = onBack)
+        }
+    }
+
+    @Parcelize @Serializable
+    data object SettingsLevel : Dest {
+        override val label = "Level Settings"
+        override val filledIcon = R.drawable.ic_level
+        override val outlineIcon = R.drawable.ic_level_outline
+        override val parent = Settings
+
+        @Composable
+        override fun Content(
+            onNavigate: (Dest) -> Unit,
+            onBack: () -> Unit,
+            backdrop: LayerBackdrop
+        ) {
+            LevelSettingsPage(onBack = onBack)
+        }
+    }
+    @Parcelize @Serializable
+    data object SettingsTile : Dest {
+        override val label = "Tile Settings"
+        override val filledIcon = R.drawable.ic_tile
+        override val outlineIcon = R.drawable.ic_tile
+        override val parent = Settings
+
+        @Composable
+        override fun Content(
+            onNavigate: (Dest) -> Unit,
+            onBack: () -> Unit,
+            backdrop: LayerBackdrop
+        ) {
+            TileSettingsPage(onBack = onBack)
+        }
+    }
+
+}
+
+public val ordered = listOf(
+    Flashlight,
+    Compass,
+    Speedometer,
+    Usage,
+    Level,
+    Settings,
+    SettingsApp,
+    SettingsCustomization,
+    SettingsFlash,
+    SettingsCompass,
+    SettingsSpeedometer,
+    SettingsUsage,
+    SettingsLevel,
+    SettingsTile
+)
+
+public val topLevel = listOf(
+    Flashlight,
+    Compass,
+    Speedometer,
+    Usage,
+    Level,
+    Settings
+)
+
+
+class DestBackStack(start: Dest) {
+
+    private var stacks = linkedMapOf(
+        start to mutableStateListOf(start)
+    )
+
+    var currentTop by mutableStateOf(start)
+        private set
+
+    val backStack = mutableStateListOf(start)
+
+    private fun sync() {
+        backStack.apply {
+            clear()
+            addAll(stacks.flatMap { it.value })
+        }
+    }
+
+    fun navigateTop(dest: Dest) {
+        if (stacks[dest] == null) {
+            stacks[dest] = mutableStateListOf(dest)
+        } else {
+            val existing = stacks.remove(dest)!!
+            stacks[dest] = existing
+        }
+        currentTop = dest
+        sync()
+    }
+
+    fun navigate(dest: Dest) {
+        stacks[currentTop]?.add(dest)
+        sync()
+    }
+
+    fun pop() {
+        val removed = stacks[currentTop]?.removeLastOrNull()
+        stacks.remove(removed)
+        currentTop = stacks.keys.last()
+        sync()
+    }
+}
+
+//
+//@Serializable
+//enum class DestEntries(
+//    val label: String,
+//    val filledIcon: Int,
+//    val outlineIcon: Int,
+//    val parent: DestEntries? = null
+//) : NavKey {
+//    Flashlight("Flash", R.drawable.ic_flashlight, R.drawable.ic_flashlight_outline),
+//    Compass("Compass", R.drawable.ic_compass, R.drawable.ic_compass_outline),
+//    Speedometer("Speed", R.drawable.ic_speed, R.drawable.ic_speed_outline),
+//    Usage("Usage", R.drawable.ic_usage, R.drawable.ic_usage_outline),
+//    Level("Level", R.drawable.ic_level, R.drawable.ic_level_outline),
+//    Settings("Settings", R.drawable.ic_settings, R.drawable.ic_settings_outline),
+//
+//    SettingsApp("App Settings", R.drawable.ic_apps, R.drawable.ic_apps, parent = Settings),
+//    SettingsCustomization("Customization Settings", R.drawable.ic_palette, R.drawable.ic_palette_outline, parent = Settings),
+//    SettingsFlash("Flash Settings", R.drawable.ic_flashlight, R.drawable.ic_flashlight_outline, parent = Settings),
+//    SettingsCompass("Compass Settings", R.drawable.ic_compass, R.drawable.ic_compass_outline, parent = Settings),
+//    SettingsSpeedometer("Speedometer Settings", R.drawable.ic_speed, R.drawable.ic_speed_outline, parent = Settings),
+//    SettingsUsage("Usage Settings", R.drawable.ic_usage, R.drawable.ic_usage_outline, parent = Settings),
+//    SettingsLevel("Level Settings", R.drawable.ic_level, R.drawable.ic_level_outline, parent = Settings),
+//    SettingsTile("Tile Settings", R.drawable.ic_tile, R.drawable.ic_tile, parent = Settings)
+//}
+//
+//
+////
+////@Serializable
+////sealed class Dest(val old: DestEntries) : NavKey, Parcelable {
+////    val label get() = old.label
+////    val filledIcon get() = old.filledIcon
+////    val outlineIcon get() = old.outlineIcon
+////
+////    val parent: Dest?
+////        get() = old.parent?.let { map[it] }
+////
+////    @Parcelize
+////    @Serializable
+////    private class Impl(val entry: DestEntries) : Dest(entry), Parcelable
+////
+////    companion object {
+////        // ✅ use Impl instead of anonymous object
+////        val map: Map<DestEntries, Dest> by lazy {
+////            DestEntries.entries.associateWith { entry -> Impl(entry) }
+////        }
+////
+////        val entries: List<Dest> get() = map.values.toList()
+////    }
+////}
+//
+//@Serializable
+//enum class Dest(
+//    val label: String,
+//    val filledIcon: Int,
+//    val outlineIcon: Int,
+//    val parent: Dest? = null
+//) : NavKey {
+//    // --- MAIN DESTINATIONS ---
+//    Flashlight("Flash", R.drawable.ic_flashlight, R.drawable.ic_flashlight_outline),
+//    Compass("Compass", R.drawable.ic_compass, R.drawable.ic_compass_outline),
+//    Speedometer("Speed", R.drawable.ic_speed, R.drawable.ic_speed_outline),
+//    Usage("Usage", R.drawable.ic_usage, R.drawable.ic_usage_outline),
+//    Level("Level", R.drawable.ic_level, R.drawable.ic_level_outline),
+//    Settings("Settings", R.drawable.ic_settings, R.drawable.ic_settings_outline),
+//
+//    // --- SETTINGS SUBPAGES ---
+//    SettingsApp(
+//        "App Settings",
+//        R.drawable.ic_apps,
+//        R.drawable.ic_apps,
+//        parent = Settings
+//    ),
+//    SettingsCustomization(
+//        "Customization Settings",
+//        R.drawable.ic_palette,
+//        R.drawable.ic_palette_outline,
+//        parent = Settings
+//    ),
+//    SettingsFlash(
+//        "Flash Settings",
+//        R.drawable.ic_flashlight,
+//        R.drawable.ic_flashlight_outline,
+//        parent = Settings
+//    ),
+//    SettingsCompass(
+//        "Compass Settings",
+//        R.drawable.ic_compass,
+//        R.drawable.ic_compass_outline,
+//        parent = Settings
+//    ),
+//    SettingsSpeedometer(
+//        "Speedometer Settings",
+//        R.drawable.ic_speed,
+//        R.drawable.ic_speed_outline,
+//        parent = Settings
+//    ),
+//    SettingsUsage(
+//        "Usage Settings",
+//        R.drawable.ic_usage,
+//        R.drawable.ic_usage_outline,
+//        parent = Settings
+//    ),
+//    SettingsLevel(
+//        "Level Settings",
+//        R.drawable.ic_level,
+//        R.drawable.ic_level_outline,
+//        parent = Settings
+//    ),
+//    SettingsTile(
+//        "Tile Settings",
+//        R.drawable.ic_tile,
+//        R.drawable.ic_tile,
+//        parent = Settings
+//    );
+//}
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
-
-    enum class Dest(
-        val label: String,
-        val filledIcon: Int,
-        val outlineIcon: Int,
-        val parent: Dest? = null
-    ) {
-        Flashlight("Flash", R.drawable.ic_flashlight, R.drawable.ic_flashlight_outline),
-        Compass("Compass", R.drawable.ic_compass, R.drawable.ic_compass_outline),
-        Speedometer("Speed", R.drawable.ic_speed, R.drawable.ic_speed_outline),
-        Usage("Usage", R.drawable.ic_usage, R.drawable.ic_usage_outline),
-        Level("Level", R.drawable.ic_level, R.drawable.ic_level_outline),
-        Settings("Settings", R.drawable.ic_settings, R.drawable.ic_settings_outline),
-
-        SettingsApp("App Settings", R.drawable.ic_apps, R.drawable.ic_apps, parent = Settings),
-        SettingsCustomization("Customization Settings", R.drawable.ic_palette, R.drawable.ic_palette_outline, parent = Settings),
-        SettingsFlash("Flash Settings", R.drawable.ic_flashlight, R.drawable.ic_flashlight_outline, parent = Settings),
-        SettingsCompass("Compass Settings", R.drawable.ic_compass, R.drawable.ic_compass_outline, parent = Settings),
-        SettingsSpeedometer("Speedometer Settings", R.drawable.ic_speed, R.drawable.ic_speed_outline, parent = Settings),
-        SettingsUsage("Usage Settings", R.drawable.ic_usage, R.drawable.ic_usage_outline, parent = Settings),
-        SettingsLevel("Level Settings", R.drawable.ic_level, R.drawable.ic_level_outline, parent = Settings),
-        SettingsTile("Tile Settings", R.drawable.ic_tile, R.drawable.ic_tile, parent = Settings)
-    }
-
 
 
 
@@ -116,307 +576,124 @@ class MainActivity : ComponentActivity() {
                 }
 
                 setContent {
-                    MainApp()
+                    AppTheme {
+                        MainApp()
+                    }
                 }
             }
         }
     }
 
 }
+//@Serializable
+//sealed class DestKey : NavKey {
+//    abstract val dest: Dest
+//
+//    @Serializable
+//    data class DestNav(val d: Dest) : DestKey() {
+//        override val dest: Dest get() = d
+//    }
+//}
+
 
 
 @Composable
-fun MainApp(startDestination: Dest? = null){
-    AppRoot {
-        AppTheme {
+fun MainApp(startDestination: Dest? = null) {
+    val context = LocalContext.current
+    val backdrop = rememberLayerBackdrop()
 
-            val navController = rememberNavController()
+    // App style (material vs glass)
+    val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
+    val isGlass = appStyle == AppStyle.Glass
 
-            val backdrop = rememberLayerBackdrop()
-            val context = LocalContext.current
+    // Default page from preferences
+    val defaultPage by context.defaultPageFlow().collectAsState(initial = Dest.Flashlight)
+    val startKey = startDestination ?: defaultPage
 
-            val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
-            val isGlass = appStyle == AppStyle.Glass
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
-            val currentRoute = navBackStackEntry?.destination?.route
+    val backStack = remember(startKey) { DestBackStack(startKey) }
 
-            val isLandscape = LocalConfiguration.current.orientation == ORIENTATION_LANDSCAPE
+    val isLandscape = LocalConfiguration.current.orientation == ORIENTATION_LANDSCAPE
 
-            Scaffold(
-                containerColor = Color.Transparent,
-                bottomBar = {
-                    if (!isGlass && !isLandscape) {
-                        MaterialFloatingToolbar(navController, currentRoute)
-                    }
-                    if (isGlass && !isLandscape) {
-                        val selectedTabIndex = remember(currentRoute) {
-                            Dest.entries.indexOfFirst { dest ->
-                                currentRoute?.startsWith(dest.name, ignoreCase = true) == true
-                            }.takeIf { it >= 0 } ?: 0
-                        }
+    // Unified navigation entry point
+    val onNavigate: (Dest) -> Unit = { dest ->
+        val topParent = dest.parent ?: dest
+        val currentTop = backStack.currentTop
 
-                        LiquidBottomTabs(
-                            selectedTabIndex = { selectedTabIndex },
-                            onTabSelected = { index ->
-                                val selected = Dest.entries.filter { it.parent == null }[index]
-                                navController.navigate(selected.name) {
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            backdrop = backdrop,
-                            tabsCount = Dest.entries.filter { it.parent == null }.size,
-                            modifier = Modifier
-                                .padding(horizontal = 12.dp)
-                                .padding(bottom = 32.dp)
-                        ) {
-                            Dest.entries.filter { it.parent == null }.forEachIndexed { index, dest ->
-                                val isSelected = selectedTabIndex == index
-                                val tint = if (isSelected) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurface
-
-                                val offsetY = remember { Animatable(0f) }
-                                val rotation = remember { Animatable(0f) }
-                                val usageScales = if (dest == Dest.Usage) {
-                                    remember { listOf(Animatable(1f), Animatable(1f), Animatable(1f)) }
-                                } else null
-
-                                LaunchedEffect(dest, isSelected) {
-                                    if (isSelected) {
-                                        when (dest) {
-                                            Dest.Flashlight -> {
-                                                offsetY.snapTo(0f)
-                                                offsetY.animateTo(-8f, tween(200, easing = LinearEasing))
-                                                offsetY.animateTo(0f, tween(200, easing = LinearEasing))
-                                            }
-                                            Dest.Compass -> {
-                                                rotation.snapTo(0f)
-                                                rotation.animateTo(20f, tween(75, easing = LinearEasing))
-                                                rotation.animateTo(-20f, tween(150, easing = LinearEasing))
-                                                rotation.animateTo(0f, tween(75, easing = LinearEasing))
-                                            }
-                                            Dest.Usage -> {
-                                                usageScales!!.forEach { it.snapTo(1f) }
-                                                for (i in usageScales.indices) {
-                                                    usageScales[i].animateTo(1.4f, tween(150, easing = LinearEasing))
-                                                }
-                                                usageScales.forEach { s ->
-                                                    launch {
-                                                        s.animateTo(0.8f, tween(200, easing = LinearEasing))
-                                                        s.animateTo(1f, tween(150, easing = LinearEasing))
-                                                    }
-                                                }
-                                            }
-                                            Dest.Level -> {
-                                                rotation.snapTo(0f)
-                                                rotation.animateTo(16f, tween(120, easing = LinearEasing))
-                                                rotation.animateTo(-16f, tween(240, easing = LinearEasing))
-                                                rotation.animateTo(0f, tween(120, easing = LinearEasing))
-                                            }
-                                            Dest.Settings -> {
-                                                rotation.snapTo(0f)
-                                                rotation.animateTo(360f, tween(300, easing = LinearEasing))
-                                                rotation.snapTo(0f)
-                                            }
-                                            else -> { }
-                                        }
-                                    } else {
-                                        offsetY.snapTo(0f)
-                                        rotation.snapTo(0f)
-                                        usageScales?.forEach { it.snapTo(1f) }
-                                    }
-                                }
-
-                                LiquidBottomTab(
-                                    onClick = {
-                                        val selected = Dest.entries.filter { it.parent == null }[index]
-                                        navController.navigate(selected.name) {
-                                            launchSingleTop = true
-                                            restoreState = true
-                                        }
-                                    },
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    // icon
-                                    if (dest == Dest.Usage && isSelected) {
-                                        val scales = usageScales ?: return@LiquidBottomTab
-
-                                        Box(Modifier.size(28.dp)) {
-                                            Image(
-                                                painter = painterResource(R.drawable.ic_usage_part1),
-                                                contentDescription = null,
-                                                colorFilter = ColorFilter.tint(tint),
-                                                modifier = Modifier.matchParentSize().graphicsLayer {
-                                                    scaleX = scales[0].value
-                                                    scaleY = scales[0].value
-                                                }
-                                            )
-                                            Image(
-                                                painter = painterResource(R.drawable.ic_usage_part2),
-                                                contentDescription = null,
-                                                colorFilter = ColorFilter.tint(tint),
-                                                modifier = Modifier.matchParentSize().graphicsLayer {
-                                                    scaleX = scales[1].value
-                                                    scaleY = scales[1].value
-                                                }
-                                            )
-                                            Image(
-                                                painter = painterResource(R.drawable.ic_usage_part3),
-                                                contentDescription = null,
-                                                colorFilter = ColorFilter.tint(tint),
-                                                modifier = Modifier.matchParentSize().graphicsLayer {
-                                                    scaleX = scales[2].value
-                                                    scaleY = scales[2].value
-                                                }
-                                            )
-                                        }
-                                    }
-                                    else if (dest == Dest.Speedometer && isSelected) {
-                                        AnimatedSpeedOutlineIcon(
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            isSelected = true
-                                        )
-                                    }
-                                    else {
-                                        Box(
-                                            Modifier
-                                                .size(28.dp)
-                                                .graphicsLayer {
-                                                    rotationZ = rotation.value
-                                                    translationY = offsetY.value.dp.toPx()
-                                                }
-                                                .paint(
-                                                    painterResource(
-                                                        if (isSelected) dest.filledIcon else dest.outlineIcon
-                                                    ),
-                                                    colorFilter = ColorFilter.tint(tint)
-                                                )
-                                        )
-                                    }
-
-                                    // label
-                                    BasicText(
-                                        text = dest.label,
-                                        style = TextStyle(
-                                            color = tint,
-                                            fontSize = 12.sp
-                                        )
-                                    )
-                                }
-                            }
-                        }
-
-                    }
-                },
-                contentWindowInsets = WindowInsets(0)
-            ) { padding ->
-                val layoutDir = LocalLayoutDirection.current
-                val safeInsets = WindowInsets.safeDrawing.asPaddingValues()
-
-                val railWidth = 92.dp
-
-                val leftInset = safeInsets.calculateLeftPadding(layoutDir)
-
-                val railInsets = WindowInsets.systemBars.union(WindowInsets.displayCutout)
-
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background)
-                ) {
-                    AppNavHost(
-                        navController = navController,
-                        modifier = Modifier
-                            .padding(padding)
-                            .padding(4.dp)
-                            .layerBackdrop(backdrop)
-                            .windowInsetsPadding(
-                                WindowInsets.systemBars.only(WindowInsetsSides.Top)
-                            )
-                            .then(
-                                if (isLandscape)
-                                    Modifier.padding(start = railWidth + leftInset)
-                                else
-                                    Modifier
-                            ),
-                        backdrop = backdrop,
-                        startDestination = startDestination
-                    )
-
-                    if (isLandscape) {
-                        NavigationRail(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            modifier = Modifier
-                                .align(Alignment.CenterStart)
-                                .windowInsetsPadding(railInsets)
-                                .fillMaxHeight()
-                                .width(railWidth)
-                                .padding(vertical = 8.dp)
-                        ) {
-                            // 👇 Make the inside scrollable
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxHeight()
-                                    .verticalScroll(rememberScrollState()),
-                                verticalArrangement = Arrangement.Top,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Dest.entries
-                                    .filter { it.parent == null }
-                                    .forEach { dest ->
-                                        val isSelected = currentRoute?.startsWith(dest.name, true) == true
-
-                                        NavigationRailItem(
-                                            selected = isSelected,
-                                            onClick = {
-                                                if (currentRoute != dest.name) {
-                                                    navController.navigate(dest.name) {
-                                                        launchSingleTop = true
-                                                        restoreState = true
-                                                    }
-                                                }
-                                            },
-                                            icon = {
-                                                Icon(
-                                                    painter = painterResource(
-                                                        if (isSelected) dest.filledIcon else dest.outlineIcon
-                                                    ),
-                                                    contentDescription = dest.label,
-                                                    tint = if (isSelected)
-                                                        MaterialTheme.colorScheme.primary
-                                                    else
-                                                        MaterialTheme.colorScheme.onSurface,
-                                                    modifier = Modifier.size(30.dp)
-                                                )
-                                            },
-                                            label = {
-                                                Text(
-                                                    text = dest.label,
-                                                    fontSize = 13.sp,
-                                                    color = if (isSelected)
-                                                        MaterialTheme.colorScheme.primary
-                                                    else
-                                                        MaterialTheme.colorScheme.onSurface
-                                                )
-                                            },
-                                            alwaysShowLabel = true
-                                        )
-                                    }
-                            }
-                        }
-
-                    }
-
-
-
-
-                }
-
+        if (topParent != currentTop) {
+            // Jump to another top-level root
+            backStack.navigateTop(topParent)
+            if (dest != topParent) {
+                backStack.navigate(dest)
             }
+        } else {
+            // Navigate inside same root stack
+            backStack.navigate(dest)
         }
     }
 
+    Scaffold(
+        containerColor = Color.Transparent,
+        bottomBar = {
+            if (!isLandscape) {
+                if (!isGlass) {
+                    CustomFloatingBottomBar(
+                        backStack = backStack,
+                        onNavigate = { dest -> backStack.navigateTop(dest) }
+                    )
+                } else {
+                    CustomLiquidBottomBar(
+                        backStack = backStack,
+                        onNavigate = { dest -> backStack.navigateTop(dest) },
+                        backdrop = backdrop
+                    )
+                }
+            }
+        },
+        contentWindowInsets = WindowInsets(0)
+    ) { padding ->
+
+        val layoutDir = LocalLayoutDirection.current
+        val safeInsets = WindowInsets.safeDrawing.asPaddingValues()
+        val railWidth = scaledWidth(92.dp)
+        val leftInset = safeInsets.calculateLeftPadding(layoutDir)
+
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+
+            AppNavHost(
+                backStack = backStack,
+                onNavigate = onNavigate,
+                modifier = Modifier
+//                    .padding(padding)
+//                    .padding(4.dp)
+                    .layerBackdrop(backdrop)
+//                    .windowInsetsPadding(
+//                        WindowInsets.systemBars.only(WindowInsetsSides.Top)
+//                    )
+                    .windowInsetsPadding(WindowInsets.systemBars)
+                    .then(
+                        if (isLandscape)
+                            Modifier.padding(start = railWidth + leftInset)
+                        else
+                            Modifier
+                    ),
+                backdrop = backdrop
+            )
+
+            if (isLandscape) {
+                SideAppBar(
+                    backStack = backStack,
+                    onNavigate = { dest -> backStack.navigateTop(dest) },
+                    modifier = Modifier.align(Alignment.CenterStart)
+                )
+            }
+        }
+    }
 }
+
 
 @Composable
 fun AppRoot(content: @Composable () -> Unit) {
@@ -434,212 +711,6 @@ fun AppRoot(content: @Composable () -> Unit) {
     }
 }
 
-
-class CoretoolsApp : Application() {
-    override fun onCreate() {
-        super.onCreate()
-        DynamicColors.applyToActivitiesIfAvailable(this)
-        FlashlightRepo.init(this)
-    }
-}
-//
-//@Composable
-//fun isLandscape(): Boolean {
-//    val context = LocalContext.current
-//    val userOrientation by context.orientationModeFlow().collectAsState(initial = OrientationMode.AUTO)
-//    val deviceLandscape = LocalConfiguration.current.orientation == ORIENTATION_LANDSCAPE
-//
-//    val isLandscape = when (userOrientation) {
-//        OrientationMode.AUTO -> deviceLandscape
-//        OrientationMode.LANDSCAPE -> true
-//        OrientationMode.PORTRAIT -> false
-//    }
-//    return isLandscape
-//}
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-fun MaterialFloatingToolbar(
-    navController: NavController,
-    currentRoute: String?
-) {
-    var expanded by rememberSaveable { mutableStateOf(true) }
-
-    val exitAlwaysScrollBehavior =
-        FloatingToolbarDefaults.exitAlwaysScrollBehavior(exitDirection = FloatingToolbarExitDirection.Bottom)
-    val vibrantColors = FloatingToolbarDefaults.standardFloatingToolbarColors()
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 16.dp)
-            .padding(horizontal = 8.dp),
-        contentAlignment = Alignment.BottomCenter
-    ) {
-        HorizontalFloatingToolbar(
-            expanded = expanded,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .offset(y = -FloatingToolbarDefaults.ScreenOffset)
-                .zIndex(1f),
-            colors = vibrantColors,
-            scrollBehavior = exitAlwaysScrollBehavior,
-        ) {
-            Dest.entries
-                .filter { it.parent == null }
-                .forEach { dest ->
-                    val isSelected =
-                        currentRoute?.startsWith(dest.name, ignoreCase = true) == true
-
-                    val offsetY = remember { Animatable(0f) }
-                    val rotation = remember { Animatable(0f) }
-                    val usageScales = if (dest == Dest.Usage) {
-                        remember {
-                            listOf(
-                                Animatable(1f),
-                                Animatable(1f),
-                                Animatable(1f)
-                            )
-                        }
-                    } else null
-
-                    // 🎬 Per-icon animation effects
-                    LaunchedEffect(dest, isSelected) {
-                        if (isSelected) {
-                            when (dest) {
-                                Dest.Flashlight -> {
-                                    offsetY.snapTo(0f)
-                                    offsetY.animateTo(-8f, tween(200, easing = LinearEasing))
-                                    offsetY.animateTo(0f, tween(200, easing = LinearEasing))
-                                }
-                                Dest.Compass -> {
-                                    rotation.snapTo(0f)
-                                    rotation.animateTo(20f, tween(75, easing = LinearEasing))
-                                    rotation.animateTo(-20f, tween(150, easing = LinearEasing))
-                                    rotation.animateTo(0f, tween(75, easing = LinearEasing))
-                                }
-                                Dest.Usage -> {
-                                    usageScales!!.forEach { it.snapTo(1f) }
-                                    for (i in usageScales.indices) {
-                                        usageScales[i].animateTo(
-                                            1.4f,
-                                            tween(150, easing = LinearEasing)
-                                        )
-                                    }
-                                    usageScales.forEach { s ->
-                                        launch {
-                                            s.animateTo(0.8f, tween(200, easing = LinearEasing))
-                                            s.animateTo(1f, tween(150, easing = LinearEasing))
-                                        }
-                                    }
-                                }
-                                Dest.Level -> {
-                                    rotation.snapTo(0f)
-                                    rotation.animateTo(16f, tween(120, easing = LinearEasing))
-                                    rotation.animateTo(-16f, tween(240, easing = LinearEasing))
-                                    rotation.animateTo(0f, tween(120, easing = LinearEasing))
-                                }
-                                Dest.Settings -> {
-                                    rotation.snapTo(0f)
-                                    rotation.animateTo(360f, tween(300, easing = LinearEasing))
-                                    rotation.snapTo(0f)
-                                }
-                                else -> Unit
-                            }
-                        } else {
-                            offsetY.snapTo(0f)
-                            rotation.snapTo(0f)
-                            usageScales?.forEach { it.snapTo(1f) }
-                        }
-                    }
-
-                    // 🧭 NavigationBarItem style (icon + label)
-                    CompactNavigationBarItem(
-                        selected = isSelected,
-                        onClick = {
-                            if (currentRoute != dest.name) {
-                                navController.navigate(dest.name) {
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        },
-                        icon = {
-                            if (dest == Dest.Usage && isSelected) {
-                                val tintColor = MaterialTheme.colorScheme.primary
-                                val scales = usageScales ?: return@CompactNavigationBarItem
-
-                                Box(Modifier.size(28.dp)) {
-                                    Image(
-                                        painter = painterResource(R.drawable.ic_usage_part1),
-                                        contentDescription = null,
-                                        colorFilter = ColorFilter.tint(tintColor),
-                                        modifier = Modifier
-                                            .matchParentSize()
-                                            .graphicsLayer {
-                                                scaleX = scales[0].value
-                                                scaleY = scales[0].value
-                                            }
-                                    )
-                                    Image(
-                                        painter = painterResource(R.drawable.ic_usage_part2),
-                                        contentDescription = null,
-                                        colorFilter = ColorFilter.tint(tintColor),
-                                        modifier = Modifier
-                                            .matchParentSize()
-                                            .graphicsLayer {
-                                                scaleX = scales[1].value
-                                                scaleY = scales[1].value
-                                            }
-                                    )
-                                    Image(
-                                        painter = painterResource(R.drawable.ic_usage_part3),
-                                        contentDescription = null,
-                                        colorFilter = ColorFilter.tint(tintColor),
-                                        modifier = Modifier
-                                            .matchParentSize()
-                                            .graphicsLayer {
-                                                scaleX = scales[2].value
-                                                scaleY = scales[2].value
-                                            }
-                                    )
-                                }
-                            } else {
-
-                                if (dest == Dest.Speedometer && isSelected) {
-                                    AnimatedSpeedOutlineIcon(
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        isSelected = true
-                                    )
-                                } else {
-                                    Icon(
-                                        painter = painterResource(
-                                            if (isSelected) dest.filledIcon else dest.outlineIcon
-                                        ),
-                                        contentDescription = dest.label,
-                                        tint = if (isSelected)
-                                            MaterialTheme.colorScheme.primary
-                                        else
-                                            MaterialTheme.colorScheme.onSurface,
-                                        modifier = Modifier.size(28.dp)
-                                    )
-                                }
-                            }
-                        },
-                        label = {
-                            AutoResizeText(
-                                text = dest.label,
-                                style = MaterialTheme.typography.labelMedium,
-                                maxLines = 1,
-                                minTextSize = 8.sp,   // smallest size allowed
-                                maxTextSize = 13.sp   // default label size
-                            )
-                        },
-                        alwaysShowLabel = true
-                    )
-                }
-        }
-    }
-}
 @Composable
 fun AutoResizeText(
     text: String,
@@ -676,191 +747,4 @@ fun AutoResizeText(
         )
     }
 }
-
-
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-fun MaterialScrollableFloatingToolbar(
-    navController: NavController,
-    currentRoute: String?
-) {
-    var expanded by rememberSaveable { mutableStateOf(true) }
-
-    val exitAlwaysScrollBehavior =
-        FloatingToolbarDefaults.exitAlwaysScrollBehavior(exitDirection = FloatingToolbarExitDirection.Bottom)
-    val vibrantColors = FloatingToolbarDefaults.standardFloatingToolbarColors()
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 16.dp)
-            .padding(horizontal = 8.dp),
-        contentAlignment = Alignment.BottomCenter
-    ) {
-        HorizontalFloatingToolbar(
-            expanded = expanded,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .offset(y = -FloatingToolbarDefaults.ScreenOffset)
-                .zIndex(1f),
-            colors = vibrantColors,
-            scrollBehavior = exitAlwaysScrollBehavior,
-        ) {
-            // 🔁 Use LazyRow for horizontal overflow + set a sensible height
-            val listState = rememberLazyListState()
-            LazyRow(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(72.dp),                 // ensure the bar isn't "thin"
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                contentPadding = PaddingValues(horizontal = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                items(
-                    Dest.entries.filter { it.parent == null },
-                    key = { it.name }               // stable keys help animations
-                ) { dest ->
-                    val isSelected = currentRoute?.startsWith(dest.name, ignoreCase = true) == true
-
-                    // ⤵ keep your per-item animation state
-                    val offsetY = remember { Animatable(0f) }
-                    val rotation = remember { Animatable(0f) }
-                    val usageScales = if (dest == Dest.Usage) {
-                        remember { listOf(Animatable(1f), Animatable(1f), Animatable(1f)) }
-                    } else null
-
-                    LaunchedEffect(dest, isSelected) {
-                        if (isSelected) {
-                            when (dest) {
-                                Dest.Flashlight -> {
-                                    offsetY.snapTo(0f)
-                                    offsetY.animateTo(-8f, tween(200, easing = LinearEasing))
-                                    offsetY.animateTo(0f, tween(200, easing = LinearEasing))
-                                }
-                                Dest.Compass -> {
-                                    rotation.snapTo(0f)
-                                    rotation.animateTo(20f, tween(75, easing = LinearEasing))
-                                    rotation.animateTo(-20f, tween(150, easing = LinearEasing))
-                                    rotation.animateTo(0f, tween(75, easing = LinearEasing))
-                                }
-                                Dest.Usage -> {
-                                    usageScales!!.forEach { it.snapTo(1f) }
-                                    for (i in usageScales.indices) {
-                                        usageScales[i].animateTo(1.4f, tween(150, easing = LinearEasing))
-                                    }
-                                    usageScales.forEach { s ->
-                                        launch {
-                                            s.animateTo(0.8f, tween(200, easing = LinearEasing))
-                                            s.animateTo(1f, tween(150, easing = LinearEasing))
-                                        }
-                                    }
-                                }
-                                Dest.Level -> {
-                                    rotation.snapTo(0f)
-                                    rotation.animateTo(16f, tween(120, easing = LinearEasing))
-                                    rotation.animateTo(-16f, tween(240, easing = LinearEasing))
-                                    rotation.animateTo(0f, tween(120, easing = LinearEasing))
-                                }
-                                Dest.Settings -> {
-                                    rotation.snapTo(0f)
-                                    rotation.animateTo(360f, tween(300, easing = LinearEasing))
-                                    rotation.snapTo(0f)
-                                }
-                                else -> Unit
-                            }
-                        } else {
-                            offsetY.snapTo(0f)
-                            rotation.snapTo(0f)
-                            usageScales?.forEach { it.snapTo(1f) }
-                        }
-                    }
-
-                    // 🧭 Each item gets a minimum width so text won't wrap vertically
-                    CompactNavigationBarItem(
-                        selected = isSelected,
-                        onClick = {
-                            if (currentRoute != dest.name) {
-                                navController.navigate(dest.name) {
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        },
-                        icon = {
-                            if (dest == Dest.Usage && isSelected) {
-                                val tintColor = MaterialTheme.colorScheme.primary
-                                val scales = usageScales ?: return@CompactNavigationBarItem
-
-                                Box(Modifier.size(28.dp)) {
-                                    Image(
-                                        painter = painterResource(R.drawable.ic_usage_part1),
-                                        contentDescription = null,
-                                        colorFilter = ColorFilter.tint(tintColor),
-                                        modifier = Modifier
-                                            .matchParentSize()
-                                            .graphicsLayer {
-                                                scaleX = scales[0].value
-                                                scaleY = scales[0].value
-                                            }
-                                    )
-                                    Image(
-                                        painter = painterResource(R.drawable.ic_usage_part2),
-                                        contentDescription = null,
-                                        colorFilter = ColorFilter.tint(tintColor),
-                                        modifier = Modifier
-                                            .matchParentSize()
-                                            .graphicsLayer {
-                                                scaleX = scales[1].value
-                                                scaleY = scales[1].value
-                                            }
-                                    )
-                                    Image(
-                                        painter = painterResource(R.drawable.ic_usage_part3),
-                                        contentDescription = null,
-                                        colorFilter = ColorFilter.tint(tintColor),
-                                        modifier = Modifier
-                                            .matchParentSize()
-                                            .graphicsLayer {
-                                                scaleX = scales[2].value
-                                                scaleY = scales[2].value
-                                            }
-                                    )
-                                }
-                            } else {
-                                if (dest == Dest.Speedometer && isSelected) {
-                                    AnimatedSpeedOutlineIcon(
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        isSelected = true
-                                    )
-                                } else {
-                                    Icon(
-                                        painter = painterResource(
-                                            if (isSelected) dest.filledIcon else dest.outlineIcon
-                                        ),
-                                        contentDescription = dest.label,
-                                        tint = if (isSelected)
-                                            MaterialTheme.colorScheme.primary
-                                        else
-                                            MaterialTheme.colorScheme.onSurface,
-                                        modifier = Modifier.size(28.dp)
-                                    )
-                                }
-                            }
-                        },
-                        label = {
-                            Text(
-                                text = dest.label,
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                        },
-                        alwaysShowLabel = true
-                    )
-
-                }
-            }
-        }
-    }
-}
-
 

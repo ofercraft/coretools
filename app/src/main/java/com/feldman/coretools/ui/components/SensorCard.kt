@@ -40,7 +40,6 @@ fun RowScope.SensorCard(
     index: Int,
     backdrop: Backdrop,
     modifier: Modifier = Modifier,
-    cornerRadius: Dp = 32.dp,
     speed: Long = 80L
 ) {
     val context = LocalContext.current
@@ -78,7 +77,7 @@ fun RowScope.SensorCard(
                 .aspectRatio(1f)
                 .graphicsLayer {
                     alpha = if (visible) 1f else 0f
-                    this.shape = RoundedCornerShape(cornerRadius)
+                    this.shape = RoundedCornerShape(30)
                     clip = true
                     transformOrigin = TransformOrigin.Center
                     scaleX = scale

@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.core.content.ContextCompat
+import com.feldman.coretools.BottomSpacer
 import com.feldman.coretools.storage.AppStyle
 import com.feldman.coretools.storage.appStyleFlow
 import com.feldman.coretools.storage.speedUnitFlow
@@ -120,8 +121,6 @@ fun SpeedometerPage(modifier: Modifier = Modifier) {
                 )
             }
 
-            Spacer(Modifier.height(16.dp))
-
             SpeedStatsRow(
                 minSpeed = if (minSpeed == Float.MAX_VALUE) 0f else minSpeed,
                 avgSpeed = avgSpeed,
@@ -129,8 +128,9 @@ fun SpeedometerPage(modifier: Modifier = Modifier) {
                 backdrop = backdrop,
                 isGlass = isGlass,
                 isKmh = speedUnit == "kmh",
-                modifier = Modifier.padding(bottom = 24.dp)
             )
+            Spacer(Modifier.height(BottomSpacer))
+
         }
     } else {
         // 💻 Landscape → Gauge left, stats right
@@ -194,15 +194,15 @@ fun SpeedStatsRow(
 //    val dark = isDarkTheme()
     val secondaryContainer = MaterialTheme.colorScheme.secondaryContainer
 
-    val cookie4Shape = ScaledShape(MaterialShapes.Cookie4Sided.toShape(), scale = 1.4f)
-    val archShape = ScaledShape(MaterialShapes.Arch.toShape(), scale = 1.2f)
-    val squareShape = ScaledShape(MaterialShapes.Square.toShape(), scale = 1.2f)
+    val cookie4Shape = ScaledShape(MaterialShapes.Cookie4Sided.toShape(), scale = 1.15f)
+    val archShape = ScaledShape(MaterialShapes.Arch.toShape(), scale = 1f)
+    val squareShape = ScaledShape(MaterialShapes.Square.toShape(), scale = 1f)
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(if (isGlass) 10.dp else 30.dp, Alignment.CenterHorizontally),
+            .padding(horizontal = 36.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (isGlass) 10.dp else 12.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // 🟦 Min speed
@@ -213,8 +213,7 @@ fun SpeedStatsRow(
             shape = squareShape,
             color = secondaryContainer,
             index = 1,
-            backdrop = backdrop,
-            cornerRadius = 40.dp
+            backdrop = backdrop
         )
 
         // 🟨 Avg speed
@@ -225,8 +224,7 @@ fun SpeedStatsRow(
             shape = cookie4Shape,
             color = secondaryContainer,
             index = 2,
-            backdrop = backdrop,
-            cornerRadius = 40.dp
+            backdrop = backdrop
         )
 
         // 🟥 Max speed
@@ -237,8 +235,7 @@ fun SpeedStatsRow(
             shape = archShape,
             color = secondaryContainer,
             index = 3,
-            backdrop = backdrop,
-            cornerRadius = 40.dp
+            backdrop = backdrop
         )
     }
 }

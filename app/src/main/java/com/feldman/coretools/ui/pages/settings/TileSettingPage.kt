@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.feldman.coretools.BottomSpacer
 import com.feldman.coretools.storage.AppStyle
 import com.feldman.coretools.storage.appStyleFlow
 import com.feldman.coretools.storage.hideHomeFlow
@@ -42,7 +43,9 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TileSettingsPage(navController: NavController) {
+fun TileSettingsPage(
+    onBack: () -> Unit
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -63,7 +66,7 @@ fun TileSettingsPage(navController: NavController) {
                 .fillMaxWidth()
                 .height(56.dp)
         ) {
-            IconButton(onClick = { navController.navigateUp() }) {
+            IconButton(onClick = onBack) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
@@ -128,6 +131,7 @@ fun TileSettingsPage(navController: NavController) {
                 )
             }
         }
+        Spacer(Modifier.height(BottomSpacer))
 
     }
 }

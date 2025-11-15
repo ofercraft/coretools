@@ -9,8 +9,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.feldman.coretools.BottomSpacer
+import com.feldman.coretools.Dest
 import com.feldman.coretools.storage.AppStyle
-import com.feldman.coretools.MainActivity.Dest
 import com.feldman.coretools.R
 import com.feldman.coretools.storage.appStyleFlow
 import com.feldman.coretools.ui.components.ActionRow
@@ -22,7 +23,7 @@ import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsPage(
-    navController: NavController,
+    onNavigate: (Dest) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -57,14 +58,14 @@ fun SettingsPage(
                 ),
                 onClick = { option ->
                     when (option) {
-                        "app" -> navController.navigate(Dest.SettingsApp.name)
-                        "customization" -> navController.navigate(Dest.SettingsCustomization.name)
-                        "flashlight" -> navController.navigate(Dest.SettingsFlash.name)
-                        "compass" -> navController.navigate(Dest.SettingsCompass.name)
-                        "speedometer" -> navController.navigate(Dest.SettingsSpeedometer.name)
-                        "usage" -> navController.navigate(Dest.SettingsUsage.name)
-                        "level" -> navController.navigate(Dest.SettingsLevel.name)
-                        "tile" -> navController.navigate(Dest.SettingsTile.name)
+                        "app" -> onNavigate(Dest.SettingsApp)
+                        "customization" -> onNavigate(Dest.SettingsCustomization)
+                        "flashlight" -> onNavigate(Dest.SettingsFlash)
+                        "compass" -> onNavigate(Dest.SettingsCompass)
+                        "speedometer" -> onNavigate(Dest.SettingsSpeedometer)
+                        "usage" -> onNavigate(Dest.SettingsUsage)
+                        "level" -> onNavigate(Dest.SettingsLevel)
+                        "tile" -> onNavigate(Dest.SettingsTile)
                     }
                 },
                 isGlass = isGlass,
@@ -72,7 +73,7 @@ fun SettingsPage(
             )
 
         }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(BottomSpacer))
     }
 
 }

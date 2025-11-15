@@ -3,6 +3,7 @@ package com.feldman.coretools.ui.pages
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.graphics.Paint
 import android.hardware.GeomagneticField
@@ -51,7 +52,6 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import com.feldman.coretools.MainActivity.Dest
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -74,6 +74,8 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
@@ -125,6 +127,11 @@ import java.util.Locale
 import kotlin.coroutines.resume
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.TextUnitType
+import com.feldman.coretools.BottomSpacer
+import com.feldman.coretools.Dest
 import com.feldman.coretools.MainApp
 import com.feldman.coretools.storage.compassShapeFlow
 import com.feldman.coretools.storage.compassVibrationFeedbackFlow
@@ -767,7 +774,16 @@ fun CompassPage() {
 
 
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { 2 })
-
+    val pagerConnection = PagerDefaults.pageNestedScrollConnection(
+        state = pagerState,
+        orientation = Orientation.Vertical
+    )
+    val customPagerConnection = object : NestedScrollConnection by pagerConnection {
+        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+            // Optional custom behavior
+            return Offset(available.x, available.y * 0.5f)
+        }
+    }
     VerticalPager(
         state = pagerState,
         beyondViewportPageCount = 1,
@@ -778,7 +794,7 @@ fun CompassPage() {
                     state = pagerState,
                     orientation = Orientation.Vertical
                 )
-            )
+            ),
     ) { page ->
         when (page) {
             0 -> {
@@ -809,6 +825,198 @@ fun CompassPage() {
         }
     }
 }
+//@Composable
+//fun scaledPadding(
+//    base: Dp = 32.dp,
+//    referencePhoneWidth: Float = 360f,
+//    min: Dp = 32.dp,
+//    max: Dp = 2000.dp   // prevent huge values
+//): Dp {
+//    val config = LocalConfiguration.current
+//    val scaleFactor = config.screenWidthDp / referencePhoneWidth
+//
+//    val scaled = base * scaleFactor
+//    return scaled.coerceIn(min, max)
+//}
+//@Composable
+//fun scaledLandscapePaddingDp(
+//    base: Dp,
+//    referencePhoneWidth: Float = 800f,
+//    min: Dp = base,
+//    max: Dp = base * 10
+//): Dp {
+//    val config = LocalConfiguration.current
+//    val scaleFactor = config.screenWidthDp / referencePhoneWidth
+//    val scaled = base * scaleFactor
+//    return scaled.coerceIn(min, max)
+//}
+//
+//@Composable
+//fun scaledSp(
+//    base: TextUnit,
+//    min: TextUnit = base,
+//    max: TextUnit = base * 10,
+//    referencePortraitWidth: Float = 360f,
+//    referenceLandscapeWidth: Float = 800f
+//): TextUnit {
+//    val config = LocalConfiguration.current
+//    val orientation = config.orientation
+//
+//    // Select reference width based on orientation
+//    val referenceWidth = when (orientation) {
+//        Configuration.ORIENTATION_LANDSCAPE -> referenceLandscapeWidth
+//        else -> referencePortraitWidth
+//    }
+//
+//    // Compute scale factor based on screenWidth
+//    val scaleFactor = config.screenWidthDp / referenceWidth
+//
+//    // Scale raw value
+//    val scaledValue = base.value * scaleFactor
+//
+//    // Clamp safely using floats
+//    val clamped = scaledValue.coerceIn(min.value, max.value)
+//
+//    return clamped.sp
+//}
+//@Composable
+//fun scaledDp(
+//    base: Dp,
+//    min: Dp = base,
+//    max: Dp = base * 10,
+//    referencePortraitWidth: Float = 360f,
+//    referenceLandscapeWidth: Float = 800f
+//): Dp {
+//    val config = LocalConfiguration.current
+//    val orientation = config.orientation
+//
+//    val referenceWidth = when (orientation) {
+//        Configuration.ORIENTATION_LANDSCAPE -> referenceLandscapeWidth
+//        else -> referencePortraitWidth
+//    }
+//
+//    val scaleFactor = config.screenWidthDp / referenceWidth
+//
+//    val scaled = base * scaleFactor
+//    return scaled.coerceIn(min, max)
+//}
+
+@Composable
+inline fun <reified T> scaled(
+    base: T,
+    min: T? = null,
+    max: T? = null,
+    referencePortraitWidth: Float = 360f,
+    referenceLandscapeWidth: Float = 800f
+): T {
+    val config = LocalConfiguration.current
+    val orientation = config.orientation
+
+    val referenceWidth = when (orientation) {
+        Configuration.ORIENTATION_LANDSCAPE -> referenceLandscapeWidth
+        else -> referencePortraitWidth
+    }
+
+    val scaleFactor = config.screenWidthDp / referenceWidth
+
+    // ----- DP -----
+    if (base is Dp) {
+        val minDp = (min as? Dp) ?: base
+        val maxDp = (max as? Dp) ?: (base * 10)
+        val scaledDp = base * scaleFactor
+        return scaledDp.coerceIn(minDp, maxDp) as T
+    }
+
+    // ----- SP -----
+    if (base is TextUnit && base.type == TextUnitType.Sp) {
+        val minSp = (min as? TextUnit) ?: base
+        val maxSp = (max as? TextUnit) ?: (base * 10)
+
+        val scaledValue = base.value * scaleFactor
+        val clamped = scaledValue.coerceIn(minSp.value, maxSp.value)
+
+        return clamped.sp as T
+    }
+
+    throw IllegalArgumentException("scaled() only supports Dp or Sp")
+}
+@Composable
+inline fun <reified T> scaledWidth(
+    base: T,
+    min: T? = null,
+    max: T? = null,
+    referencePortraitWidth: Float = 360f,
+    referenceLandscapeWidth: Float = 800f
+): T {
+    val config = LocalConfiguration.current
+    val orientation = config.orientation
+
+    val reference = when (orientation) {
+        Configuration.ORIENTATION_LANDSCAPE -> referenceLandscapeWidth
+        else -> referencePortraitWidth
+    }
+
+    val scaleFactor = config.screenWidthDp / reference
+
+    // ----- DP -----
+    if (base is Dp) {
+        val minDp = (min as? Dp) ?: base
+        val maxDp = (max as? Dp) ?: (base * 10)
+        val scaled = base * scaleFactor
+        return scaled.coerceIn(minDp, maxDp) as T
+    }
+
+    // ----- SP -----
+    if (base is TextUnit && base.type == TextUnitType.Sp) {
+        val minSp = (min as? TextUnit) ?: base
+        val maxSp = (max as? TextUnit) ?: (base * 10)
+
+        val scaled = base.value * scaleFactor
+        val clamped = scaled.coerceIn(minSp.value, maxSp.value)
+        return clamped.sp as T
+    }
+
+    throw IllegalArgumentException("scaledWidth supports Dp or Sp only")
+}
+@Composable
+inline fun <reified T> scaledHeight(
+    base: T,
+    min: T? = null,
+    max: T? = null,
+    referencePortraitHeight: Float = 800f,     // typical phone portrait height
+    referenceLandscapeHeight: Float = 360f     // typical phone landscape height
+): T {
+    val config = LocalConfiguration.current
+    val orientation = config.orientation
+
+    val reference = when (orientation) {
+        Configuration.ORIENTATION_LANDSCAPE -> referenceLandscapeHeight
+        else -> referencePortraitHeight
+    }
+
+    val scaleFactor = config.screenHeightDp / reference
+
+    // ----- DP -----
+    if (base is Dp) {
+        val minDp = (min as? Dp) ?: base
+        val maxDp = (max as? Dp) ?: (base * 10)
+        val scaled = base * scaleFactor
+        return scaled.coerceIn(minDp, maxDp) as T
+    }
+
+    // ----- SP -----
+    if (base is TextUnit && base.type == TextUnitType.Sp) {
+        val minSp = (min as? TextUnit) ?: base
+        val maxSp = (max as? TextUnit) ?: (base * 10)
+
+        val scaled = base.value * scaleFactor
+        val clamped = scaled.coerceIn(minSp.value, maxSp.value)
+        return clamped.sp as T
+    }
+
+    throw IllegalArgumentException("scaledHeight supports Dp or Sp only")
+}
+
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -865,10 +1073,11 @@ private fun CompassContentMain(
                     .padding(0.dp),
                 contentAlignment = Alignment.Center
             ) {
+                val compassSize = scaledCompassSize() // <-- tablet-safe size
+
                 Canvas(
                     Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
+                        .size(compassSize)    // <-- replaces fillMaxWidth().aspectRatio(1f)
                 ) {
                     val width = 0.8f
                     val r = size.minDimension * width / 2
@@ -876,12 +1085,11 @@ private fun CompassContentMain(
                     val cy = center.y
 
                     val shapeRadius = r
-                    val shapeSize = Size(shapeRadius * 2.3f, shapeRadius * 2.3f)
+                    val shapeSize = Size(shapeRadius * 2.5f, shapeRadius * 2.5f)
 
                     if (appStyle == AppStyle.Material) {
                         val outline = selectedShape.createOutline(shapeSize, layoutDirection, this)
                         rotate(-state.azimuth, pivot = center) {
-                            // center it correctly using shapeSize
                             translate(
                                 left = cx - shapeSize.width / 2f,
                                 top = cy - shapeSize.height / 2f
@@ -890,7 +1098,6 @@ private fun CompassContentMain(
                             }
                         }
                     }
-
 
                     val tickColor = if (appStyle == AppStyle.Material) surfaceVariant else onSurface
                     val tickVariant = if (appStyle == AppStyle.Material) surface else if (dark) Color.White else Color.Black
@@ -945,9 +1152,9 @@ private fun CompassContentMain(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
+                        .padding(horizontal = scaled(36.dp)),
                     horizontalArrangement = Arrangement.spacedBy(
-                        if (isGlass) 10.dp else 30.dp,
+                        scaled(if (isGlass) 10.dp else 30.dp),
                         Alignment.CenterHorizontally
                     ),
                     verticalAlignment = Alignment.CenterVertically
@@ -960,7 +1167,6 @@ private fun CompassContentMain(
                         color = secondaryContainer,
                         index = 1,
                         backdrop = backdrop,
-                        cornerRadius = 40.dp
                     )
 
                     val pressurePsi = state.pressureHpa * 0.0145038f
@@ -973,7 +1179,6 @@ private fun CompassContentMain(
                         color = secondaryContainer,
                         index = 2,
                         backdrop = backdrop,
-                        cornerRadius = 40.dp
                     )
 
                     SensorCard(
@@ -984,7 +1189,6 @@ private fun CompassContentMain(
                         color = secondaryContainer,
                         index = 3,
                         backdrop = backdrop,
-                        cornerRadius = 40.dp
                     )
                 }
 
@@ -1005,9 +1209,9 @@ private fun CompassContentMain(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 16.dp),
+                                    .padding(horizontal = scaled(36.dp)),
                                 horizontalArrangement = Arrangement.spacedBy(
-                                    if (isGlass) 10.dp else 30.dp,
+                                    scaled(if (isGlass) 10.dp else 30.dp),
                                     Alignment.CenterHorizontally
                                 ),
                                 verticalAlignment = Alignment.CenterVertically
@@ -1046,7 +1250,7 @@ private fun CompassContentMain(
                                 LocationCard(
                                     name = name,
                                     index = 4,
-                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                    modifier = Modifier.padding(horizontal = scaled(36.dp))
                                 )
                             }
                         }
@@ -1064,6 +1268,7 @@ private fun CompassContentMain(
                     }
                 }
             }
+            Spacer(Modifier.height(BottomSpacer))
         }
     }
 
@@ -1093,8 +1298,7 @@ private fun CompassContentMain(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight()
-                    .verticalScroll(rememberScrollState()),
+                    .fillMaxHeight(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -1110,7 +1314,7 @@ private fun CompassContentMain(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(
-                        if (isGlass) 10.dp else 30.dp,
+                        if (isGlass) scaledWidth(10.dp) else scaledWidth(30.dp),
                         Alignment.CenterHorizontally
                     ),
                     verticalAlignment = Alignment.CenterVertically
@@ -1123,7 +1327,6 @@ private fun CompassContentMain(
                         color = secondaryContainer,
                         index = 1,
                         backdrop = backdrop,
-                        cornerRadius = 40.dp
                     )
 
                     val pressurePsi = state.pressureHpa * 0.0145038f
@@ -1135,7 +1338,6 @@ private fun CompassContentMain(
                         color = secondaryContainer,
                         index = 2,
                         backdrop = backdrop,
-                        cornerRadius = 40.dp
                     )
 
                     SensorCard(
@@ -1146,7 +1348,6 @@ private fun CompassContentMain(
                         color = secondaryContainer,
                         index = 3,
                         backdrop = backdrop,
-                        cornerRadius = 40.dp
                     )
                 }
 
@@ -1169,7 +1370,7 @@ private fun CompassContentMain(
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp),
                             horizontalArrangement = Arrangement.spacedBy(
-                                if (isGlass) 10.dp else 30.dp,
+                                if (isGlass) scaledWidth(10.dp) else scaledWidth(30.dp),
                                 Alignment.CenterHorizontally
                             ),
                             verticalAlignment = Alignment.CenterVertically
@@ -1224,6 +1425,23 @@ private fun CompassContentMain(
     }
 
 }
+
+@Composable
+fun scaledCompassSize(
+    base: Dp = 280.dp,             // ideal phone compass size
+    maxTabletSize: Dp = 600.dp     // limit tablets
+): Dp {
+    val config = LocalConfiguration.current
+    val widthDp = config.screenWidthDp
+
+    // Typical phone width = 360dp
+    val scale = widthDp / 360f
+    val scaled = base * scale
+
+    // safety clamp
+    return scaled.coerceIn(base, maxTabletSize)
+}
+
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun WeatherAndLocationSection(
@@ -1236,18 +1454,17 @@ private fun WeatherAndLocationSection(
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
     val isGlass = appStyle == AppStyle.Glass
 
-    val cookie9Shape = ScaledShape(MaterialShapes.Cookie9Sided.toShape(), scale = 1.3f)
-    val archShape = ScaledShape(MaterialShapes.Arch.toShape(), scale = 1.2f)
-    val squareShape = ScaledShape(MaterialShapes.Square.toShape(), scale = 1.2f)
-    val cookie4Shape = ScaledShape(MaterialShapes.Cookie4Sided.toShape(), scale = 1.4f)
+    val cookie9Shape = ScaledShape(MaterialShapes.Cookie9Sided.toShape(), scale = 1.1f)
+    val archShape = ScaledShape(MaterialShapes.Arch.toShape(), scale = 1f)
+    val squareShape = ScaledShape(MaterialShapes.Square.toShape(), scale = 1f)
+    val cookie4Shape = ScaledShape(MaterialShapes.Cookie4Sided.toShape(), scale = 1.15f)
 
     val secondaryContainer = MaterialTheme.colorScheme.secondaryContainer
     val hasForecast = forecastJson.has("current")
     val showWeatherRow by context.showWeatherRowFlow().collectAsState(initial = true)
 
     // 📱 Detect orientation
-    val isLandscape = LocalConfiguration.current.orientation ==
-            android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    val isLandscape = LocalConfiguration.current.orientation == ORIENTATION_LANDSCAPE
 
     if (!hasForecast) return
 
@@ -1291,9 +1508,8 @@ private fun WeatherAndLocationSection(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 20.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(20.dp),
+                    .padding(vertical = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(scaled(20.dp)),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 WeatherRows(
@@ -1304,6 +1520,8 @@ private fun WeatherAndLocationSection(
                 )
 
                 HourlyForecastCard(hours = nextHours)
+                Spacer(Modifier.height(BottomSpacer))
+
             }
         } else {
             // 💻 Landscape layout → nextHours on top right, min/max below it
@@ -1424,8 +1642,8 @@ private fun WeatherRows(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(if (isGlass) 10.dp else 30.dp, Alignment.CenterHorizontally),
+                .padding(horizontal = scaled(36.dp)),
+            horizontalArrangement = Arrangement.spacedBy(scaled(if (isGlass) 10.dp else 12.dp), Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {
             SensorCard(R.drawable.ic_clock, "Time", timeStr, squareShape, secondaryContainer, 0, backdrop)
@@ -1436,8 +1654,8 @@ private fun WeatherRows(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(if (isGlass) 10.dp else 30.dp, Alignment.CenterHorizontally),
+                .padding(horizontal = scaled(36.dp)),
+            horizontalArrangement = Arrangement.spacedBy(scaled(if (isGlass) 10.dp else 12.dp), Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {
             SensorCard(R.drawable.ic_thermostat, "Feels like", feelsLikeText, cookie4Shape, secondaryContainer, 0, backdrop)
@@ -1448,8 +1666,8 @@ private fun WeatherRows(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(if (isGlass) 10.dp else 40.dp, Alignment.CenterHorizontally),
+                .padding(horizontal = scaled(36.dp)),
+            horizontalArrangement = Arrangement.spacedBy(scaled(if (isGlass) 10.dp else 12.dp), Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {
             SensorCard(R.drawable.ic_thermostat, "Max Temp", maxTemp, cookie4Shape, secondaryContainer, 0, backdrop)
@@ -1464,7 +1682,7 @@ fun DrawScope.drawDial(
     showIntercardinals: Boolean,
     r: Float
 ) {
-    val inset = 24f
+    val inset = 30f
 
     val step = 2.5f
     val steps = (0..(360 / step).toInt())
@@ -1472,7 +1690,7 @@ fun DrawScope.drawDial(
     for (j in steps) {
         val i = j * step
         val angle = Math.toRadians(i.toDouble()).toFloat()
-        val length = 40f
+        val length = 36f
         val stroke = when {
             i % 90 == 0f -> 10f
             i % 45 == 0f -> 6f
@@ -1480,7 +1698,7 @@ fun DrawScope.drawDial(
         }
 
         val startRadius = if (i % 45 == 0f) r - length - inset else r - length - inset / 2f
-        val endRadius = r - inset
+        val endRadius = if (i % 45 == 0f) r+ inset/2 else r
 
         val start = center + Offset(startRadius * cos(angle), startRadius * sin(angle))
         val end = center + Offset(endRadius * cos(angle), endRadius * sin(angle))

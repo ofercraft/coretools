@@ -1,6 +1,5 @@
 package com.feldman.coretools.ui.pages
 
-import com.feldman.coretools.MainActivity.Dest
 import android.content.Context
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.hardware.Sensor
@@ -45,6 +44,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.feldman.coretools.BottomSpacer
+import com.feldman.coretools.Dest
 import com.feldman.coretools.MainActivity
 import com.feldman.coretools.MainApp
 import com.feldman.coretools.storage.AppStyle
@@ -145,7 +146,7 @@ fun FlashlightPage(modifier: Modifier = Modifier) {
         modifier = modifier
             .background(MaterialTheme.colorScheme.background)
             .fillMaxSize()
-            .padding(vertical = if (isLandscape) 0.dp else 32.dp, horizontal = 20.dp),
+            .padding(vertical = if (isLandscape) 0.dp else 32.dp, horizontal = scaledWidth(20.dp)),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -166,7 +167,6 @@ fun FlashlightPage(modifier: Modifier = Modifier) {
             valueRange = 0f..maxLevel.toFloat(),
             visibilityThreshold = 0.01f,
             backdrop = backdrop,
-            modifier = Modifier.padding(horizontal = 16.dp)
         )
 
         val percent = if (maxLevel <= 1) if (level > 0) 100 else 0
@@ -177,7 +177,7 @@ fun FlashlightPage(modifier: Modifier = Modifier) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth(1f),
-                horizontalArrangement = Arrangement.spacedBy(if (isGlass) 10.dp else 30.dp, Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.spacedBy(if (isGlass) scaled(10.dp) else scaled(30.dp), Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 SensorCard(
@@ -187,12 +187,7 @@ fun FlashlightPage(modifier: Modifier = Modifier) {
                     shape = cookie4Shape,
                     color = secondaryContainer,
                     index = 1,
-                    backdrop = backdrop,
-                    cornerRadius = 50.dp,
-                    modifier = Modifier
-                        .then(
-                            Modifier.padding(0.dp)
-                        )
+                    backdrop = backdrop
                 )
                 SensorCard(
                     icon = R.drawable.ic_layers,
@@ -201,12 +196,7 @@ fun FlashlightPage(modifier: Modifier = Modifier) {
                     shape = archShape,
                     color = secondaryContainer,
                     index = 2,
-                    backdrop = backdrop,
-                    cornerRadius = 50.dp,
-                    modifier = Modifier
-                        .then(
-                            Modifier.padding(0.dp)
-                        )
+                    backdrop = backdrop
                 )
 
                 SensorCard(
@@ -216,12 +206,7 @@ fun FlashlightPage(modifier: Modifier = Modifier) {
                     shape = squareShape,
                     color = secondaryContainer,
                     index = 3,
-                    backdrop = backdrop,
-                    cornerRadius = 50.dp,
-                    modifier = Modifier
-                        .then(
-                            Modifier.padding(0.dp)
-                        )
+                    backdrop = backdrop
                 )
             }
 
@@ -239,25 +224,29 @@ fun FlashlightPage(modifier: Modifier = Modifier) {
                 AdaptiveButton(
                     onClick = { showBlinkDialog = true },
                     backdrop = backdrop,
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.width(scaledWidth(80.dp)).height(scaledHeight(50.dp))
                 ) {
-                    Text("Blink", color = MaterialTheme.colorScheme.onPrimary)
+                    Text("Blink", color = MaterialTheme.colorScheme.onPrimary, fontSize = scaledWidth(14.sp))
+
                 }
 
                 AdaptiveButton(
                     onClick = { showMorseDialog = true },
                     backdrop = backdrop,
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.width(scaledWidth(80.dp)).height(scaledHeight(50.dp))
                 ) {
-                    Text("Morse", color = MaterialTheme.colorScheme.onPrimary)
+                    Text("Morse", color = MaterialTheme.colorScheme.onPrimary, fontSize = scaledWidth(14.sp))
                 }
 
                 AdaptiveButton(
                     onClick = { showSosDialog = true },
                     backdrop = backdrop,
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.width(scaledWidth(80.dp)).height(scaledHeight(50.dp))
                 ) {
-                    Text("SOS", color = MaterialTheme.colorScheme.onPrimary)
+                    Text("SOS", color = MaterialTheme.colorScheme.onPrimary, fontSize = scaledWidth(14.sp))
                 }
             }
         }
@@ -294,8 +283,8 @@ fun FlashlightPage(modifier: Modifier = Modifier) {
                                     }
                                 },
                                 modifier = Modifier
-                                    .width(160.dp)
-                                    .height(100.dp),
+                                    .width(scaled(160.dp))
+                                    .height(scaled(100.dp)),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = if (selectedIndex == index)
                                         MaterialTheme.colorScheme.primary
@@ -318,12 +307,11 @@ fun FlashlightPage(modifier: Modifier = Modifier) {
                                         }
                                     ),
                                     contentDescription = label,
-                                    modifier = Modifier.size(40.dp)
+                                    modifier = Modifier.size(scaled(40.dp))
                                 )
-                                Spacer(Modifier.width(6.dp))
-                                Text(label, fontSize = 20.sp)
+                                Spacer(Modifier.width(scaled(6.dp)))
+                                Text(label, fontSize = scaled(20.sp))
                             }
-
                         }
                     }
 
@@ -342,8 +330,8 @@ fun FlashlightPage(modifier: Modifier = Modifier) {
                                     }
                                 },
                                 modifier = Modifier
-                                    .width(160.dp)
-                                    .height(100.dp),
+                                    .width(scaled(160.dp))
+                                    .height(scaled(100.dp)),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = if (selectedIndex == index)
                                         MaterialTheme.colorScheme.primary
@@ -366,19 +354,17 @@ fun FlashlightPage(modifier: Modifier = Modifier) {
                                         }
                                     ),
                                     contentDescription = label,
-                                    modifier = Modifier.size(40.dp)
+                                    modifier = Modifier.size(scaled(40.dp))
                                 )
-                                Spacer(Modifier.width(6.dp))
-                                Text(label, fontSize = 20.sp)
+                                Spacer(Modifier.width(scaled(6.dp)))
+                                Text(label, fontSize = scaled(20.sp))
                             }
-
                         }
                     }
                 }
 
-                // --- RIGHT SECTION: Blink / Morse / SOS buttons ---
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(scaled(16.dp)),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .padding(start = 64.dp)
@@ -388,22 +374,22 @@ fun FlashlightPage(modifier: Modifier = Modifier) {
                         onClick = { showBlinkDialog = true },
                         backdrop = backdrop,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.width(120.dp).height(60.dp)
-                    ) { Text("Blink", color = MaterialTheme.colorScheme.onPrimary) }
+                        modifier = Modifier.width(scaledWidth(120.dp)).height(scaledHeight(60.dp))
+                    ) { Text("Blink", color = MaterialTheme.colorScheme.onPrimary, fontSize = scaledWidth(14.sp)) }
 
                     AdaptiveButton(
                         onClick = { showMorseDialog = true },
                         backdrop = backdrop,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.width(120.dp).height(60.dp)
-                    ) { Text("Morse", color = MaterialTheme.colorScheme.onPrimary) }
+                        modifier = Modifier.width(scaledWidth(120.dp)).height(scaledHeight(60.dp))
+                    ) { Text("Morse", color = MaterialTheme.colorScheme.onPrimary, fontSize = scaledWidth(14.sp)) }
 
                     AdaptiveButton(
                         onClick = { showSosDialog = true },
                         backdrop = backdrop,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.width(120.dp).height(60.dp)
-                    ) { Text("SOS", color = MaterialTheme.colorScheme.onPrimary) }
+                        modifier = Modifier.width(scaledWidth(120.dp)).height(scaledHeight(60.dp))
+                    ) { Text("SOS", color = MaterialTheme.colorScheme.onPrimary, fontSize = scaledWidth(14.sp)) }
                 }
             }
         }
@@ -433,6 +419,8 @@ fun FlashlightPage(modifier: Modifier = Modifier) {
                 context = context
             )
         }
+        Spacer(Modifier.height(BottomSpacer))
+
     }
 }
 @Composable
@@ -770,7 +758,7 @@ fun RoundedLiquidButton(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    iconSize: Dp = 72.dp
+    iconSize: Dp = scaled(72.dp)
 ) {
     val backdrop = rememberLayerBackdrop()
 
@@ -788,7 +776,7 @@ fun RoundedLiquidButton(
                 MaterialTheme.colorScheme.primary
             else
                 MaterialTheme.colorScheme.onSecondaryContainer,
-            modifier = Modifier.size(32.dp)
+            modifier = Modifier.size(scaled(32.dp))
         )
     }
 
@@ -800,7 +788,7 @@ fun PresetButtonRow(
     maxLevel: Int,
     applyLevel: (Int) -> Unit,
     fallbackHalf: () -> Int,
-    iconSize: Dp = 72.dp,
+    iconSize: Dp = scaled(72.dp),
     showText: Boolean = true
 ) {
     val context = LocalContext.current
@@ -816,7 +804,7 @@ fun PresetButtonRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(96.dp),
+            .height(scaled(96.dp)),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -875,10 +863,10 @@ fun PresetButtonRow(
                     Icon(
                         painter = icon,
                         contentDescription = "brightness level",
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(scaled(24.dp))
                     )
                     if(showText){
-                        Spacer(Modifier.width(4.dp))
+                        Spacer(Modifier.width(scaled(4.dp)))
                         Text(label)
                     }
                 }
@@ -886,6 +874,11 @@ fun PresetButtonRow(
         }
     }
 }
+
+@Stable
+inline val Int.scaled: Dp
+    @Composable
+    get() = Dp(scaled(this.toFloat()))
 
 @Composable
 fun rememberAmbientLuminance(context: Context): Float {

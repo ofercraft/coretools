@@ -27,7 +27,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.feldman.coretools.MainActivity.Dest
+import com.feldman.coretools.BottomSpacer
+import com.feldman.coretools.Dest
+import com.feldman.coretools.ordered
 import com.feldman.coretools.storage.AppStyle
 import com.feldman.coretools.storage.appStyleFlow
 import com.feldman.coretools.storage.defaultPageFlow
@@ -39,7 +41,9 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppSettingsPage(navController: NavController) {
+fun AppSettingsPage(
+    onBack: () -> Unit,
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -57,7 +61,7 @@ fun AppSettingsPage(navController: NavController) {
                 .fillMaxWidth()
                 .height(56.dp)
         ) {
-            IconButton(onClick = { navController.navigateUp() }) {
+            IconButton(onClick = onBack) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
@@ -88,6 +92,7 @@ fun AppSettingsPage(navController: NavController) {
                 }
             }
         }
+        Spacer(Modifier.height(BottomSpacer))
 
     }
 
@@ -101,7 +106,7 @@ fun DefaultPagePicker(
 ) {
     Column {
         Text("Default Page", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-        Dest.entries.filter { it.parent == null }.forEach { dest ->
+        ordered.filter { it.parent == null }.forEach { dest ->
             val isSelected = currentDest == dest
             val color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
             Row(

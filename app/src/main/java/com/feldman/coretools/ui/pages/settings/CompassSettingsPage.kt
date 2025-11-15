@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.feldman.coretools.BottomSpacer
 import com.feldman.coretools.storage.AppStyle
 import com.feldman.coretools.storage.appStyleFlow
 import com.feldman.coretools.storage.compassShapeFlow
@@ -45,7 +46,12 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CompassSettingsPage(navController: NavController = rememberNavController(), modifier: Modifier = Modifier, padding: Dp = 16.dp, onBack: () -> Unit = { navController.navigateUp() }, showTopBar: Boolean = true) {
+fun CompassSettingsPage(
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    padding: Dp = 16.dp,
+    showTopBar: Boolean = true
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -187,5 +193,7 @@ fun CompassSettingsPage(navController: NavController = rememberNavController(), 
                 )
             }
         }
+        Spacer(Modifier.height(BottomSpacer))
+
     }
 }

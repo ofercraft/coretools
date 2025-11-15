@@ -60,6 +60,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.getSystemService
+import com.feldman.coretools.BottomSpacer
+import com.feldman.coretools.Dest
 import com.feldman.coretools.storage.AppStyle
 import com.feldman.coretools.LevelAngles
 import kotlin.math.abs
@@ -68,7 +70,6 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 import com.feldman.coretools.LevelEngine
-import com.feldman.coretools.MainActivity.Dest
 import com.feldman.coretools.MainApp
 import com.feldman.coretools.storage.appStyleFlow
 import com.feldman.coretools.storage.levelModeFlow
@@ -455,6 +456,8 @@ private fun CombinedPage(
 
             }
         }
+        Spacer(Modifier.height(BottomSpacer))
+
     }
     else{
         Box(
@@ -479,8 +482,7 @@ private fun CombinedPage(
                     value = "${angles.horizAbsDeg}°",
                     shape = archShape,
                     color = secondaryContainerColor,
-                    backdrop = backdrop,
-                    cornerRadius = 70.dp
+                    backdrop = backdrop
                 )
                 SensorCard(
                     index = 2,
@@ -489,8 +491,7 @@ private fun CombinedPage(
                     value = "${angles.vertAbsDeg}°",
                     shape = cookie4Shape,
                     color = secondaryContainerColor,
-                    backdrop = backdrop,
-                    cornerRadius = 70.dp
+                    backdrop = backdrop
                 )
             }
         }
@@ -669,8 +670,7 @@ fun HorizontalLevel(
                     value = "$displayHorizAbs°",
                     shape = ghostShape,
                     color = secondaryContainerColor,
-                    backdrop = backdrop,
-                    cornerRadius = 70.dp
+                    backdrop = backdrop
                 )
                 SensorCard(
                     index = 2,
@@ -679,11 +679,11 @@ fun HorizontalLevel(
                     value = "$displayVertAbs°",
                     shape = cookie4Shape,
                     color = secondaryContainerColor,
-                    backdrop = backdrop,
-                    cornerRadius = 70.dp
+                    backdrop = backdrop
                 )
             }
         }
+    Spacer(Modifier.height(BottomSpacer))
 
 }
 
@@ -878,6 +878,8 @@ fun VerticalLevel(
 
 
     }
+    Spacer(Modifier.height(BottomSpacer))
+
 }
 
 

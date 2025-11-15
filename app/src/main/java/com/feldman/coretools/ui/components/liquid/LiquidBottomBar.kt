@@ -28,7 +28,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.feldman.coretools.Dest
 import com.feldman.coretools.MainActivity
+import com.feldman.coretools.ordered
 import com.feldman.coretools.ui.theme.isDarkTheme
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.drawBackdrop
@@ -38,12 +40,13 @@ import com.kyant.backdrop.effects.vibrancy
 
 @Composable
 fun LiquidBottomBar(
-    current: MainActivity.Dest,
-    onSelect: (MainActivity.Dest) -> Unit,
+    current: Dest,
+    onSelect: (Dest) -> Unit,
     backdrop: LayerBackdrop,
     modifier: Modifier = Modifier
 ) {
-    val items = MainActivity.Dest.entries.toTypedArray()
+    val items = ordered.toTypedArray()
+
     val selectedIndex = items.indexOf(current)
     val shape = RoundedCornerShape(32.dp)
     val dark = isDarkTheme()

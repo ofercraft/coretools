@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.feldman.coretools.BottomSpacer
 import com.feldman.coretools.R
 import com.feldman.coretools.storage.AppStyle
 import com.feldman.coretools.storage.OrientationMode
@@ -46,7 +47,9 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomizationSettingsPage(navController: NavController) {
+fun CustomizationSettingsPage(
+    onBack: () -> Unit
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val appStyle by context.appStyleFlow().collectAsState(initial = AppStyle.Material)
@@ -80,7 +83,7 @@ fun CustomizationSettingsPage(navController: NavController) {
                 .fillMaxWidth()
                 .height(56.dp)
         ) {
-            IconButton(onClick = { navController.navigateUp() }) {
+            IconButton(onClick = onBack) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
@@ -183,6 +186,7 @@ fun CustomizationSettingsPage(navController: NavController) {
             }
         }
 
+        Spacer(Modifier.height(BottomSpacer))
 
     }
 }

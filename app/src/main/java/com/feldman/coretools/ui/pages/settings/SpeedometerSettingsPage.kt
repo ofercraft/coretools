@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.feldman.coretools.BottomSpacer
 import com.feldman.coretools.R
 import com.feldman.coretools.storage.*
 import com.feldman.coretools.ui.components.SettingCard
@@ -23,7 +24,9 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SpeedometerSettingsPage(navController: NavController) {
+fun SpeedometerSettingsPage(
+    onBack: () -> Unit
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val unit by context.speedUnitFlow().collectAsState(initial = "kmh")
@@ -46,7 +49,7 @@ fun SpeedometerSettingsPage(navController: NavController) {
                 .fillMaxWidth()
                 .height(56.dp)
         ) {
-            IconButton(onClick = { navController.navigateUp() }) {
+            IconButton(onClick = onBack) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
@@ -93,5 +96,7 @@ fun SpeedometerSettingsPage(navController: NavController) {
                 )
             }
         }
+        Spacer(Modifier.height(BottomSpacer))
+
     }
 }

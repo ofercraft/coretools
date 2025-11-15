@@ -68,7 +68,7 @@ import com.feldman.coretools.storage.setHideHome
 import com.feldman.coretools.storage.setHideSaver
 import com.feldman.coretools.storage.setThemedIcons
 import com.feldman.coretools.storage.themedIconsFlow
-import com.feldman.coretools.MainActivity.Dest
+import com.feldman.coretools.Dest
 import com.feldman.coretools.ui.theme.isDarkTheme
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
